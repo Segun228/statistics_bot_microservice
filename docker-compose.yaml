@@ -1,0 +1,138 @@
+
+services:
+  zookeeper_stats:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper_stats
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    stop_grace_period: 30s
+
+  kafka_stats:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka_stats
+    depends_on:
+      - zookeeper_stats
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_stats:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_stats:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    stop_grace_period: 30s
+
+  kafdrop_stats:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop_stats
+    ports:
+      - "9001:9000" 
+    environment:
+      KAFKA_BROKERCONNECT: kafka_stats:9092
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    depends_on:
+      - kafka_stats
+    stop_grace_period: 30s
+
+  backend:
+    image: stats_backend:latest
+    container_name: stats_backend
+    ports:
+      - "8000:8000" 
+    env_file:
+      - .env.backend
+    depends_on:
+      - kafka_stats
+    stop_grace_period: 30s
+
+  bot:
+    image: stats_bot:latest
+    container_name: stats_bot
+    ports:
+      - "8080:8080" 
+    env_file:
+      - .env.bot
+    depends_on:
+      - kafka_stats
+      - backend
+    stop_grace_period: 30s
+
+  analytics:
+    image: stats_analytics:latest
+    container_name: stats_analytics
+    env_file:
+      - .env.analytics
+    depends_on:
+      - kafka_stats
+      - backend
+      - bot
+      - clickhouse
+    stop_grace_period: 30s
+
+  redis:
+    image: redis:7
+    container_name: redis_stats
+    ports:
+      - "6379:6379"
+    depends_on:
+      - kafka_stats
+      - backend
+    volumes:
+      - redis_data:/data
+    stop_grace_period: 30s
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse_stats
+    depends_on:
+      - kafka_stats
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default
+    stop_grace_period: 30s
+
+  tabix:
+    image: spoonest/clickhouse-tabix-web-client
+    platform: linux/amd64
+    container_name: tabix_stats
+    ports:
+      - "8124:80"
+    depends_on:
+      - analytics
+      - clickhouse
+    environment:
+      CLICKHOUSE_URL: "http://clickhouse:8123"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default
+      CLICKHOUSE_DB: default
+    stop_grace_period: 30s
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - clickhouse
+    stop_grace_period: 30s
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  clickhouse_data:
+  redis_data:
+  grafana_data:
