@@ -23,7 +23,9 @@ class DatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dataset
         fields = [
+            "id",
             'columns',
             'url',
+            "name"
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']

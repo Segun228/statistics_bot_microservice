@@ -26,8 +26,10 @@ from django.http import HttpResponseBadRequest
 import os
 import requests
 import pandas as pd
+import uuid
 from io import BytesIO
 load_dotenv()
+
 
 class LoggingRetrieveUpdateDestroyModelAPIView(
     mixins.RetrieveModelMixin,
@@ -155,7 +157,7 @@ class DistributionRetrieveUpdateDestroyAPIView(AuthenticatedAPIView, LoggingRetr
 
 
 class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIView):
-    
+
     authentication_classes = [TelegramAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = DatasetSerializer
@@ -165,40 +167,54 @@ class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIVi
     
     def perform_create(self, serializer):
         load_dotenv()
-
         request = self.request
         CLOUD_URL = os.getenv("CLOUD_URL")
+        CLOUD_UPLOAD_URL = os.getenv("CLOUD_UPLOAD_URL")
         CLOUD_API_KEY = os.getenv("CLOUD_API_KEY")
-        if not CLOUD_URL or not CLOUD_API_KEY:
+        
+        if not CLOUD_URL or not CLOUD_API_KEY or not CLOUD_UPLOAD_URL:
             logging.exception("Missing env required fields")
             raise ValueError("Missing env required fields")
-        CLOUD_HEADER = f"Bearer {CLOUD_API_KEY}"
+        
         csv_file = request.FILES.get("file")
         if not csv_file:
             logging.exception("Empty request received")
             from rest_framework.exceptions import ValidationError
             raise ValidationError("Empty CSV file received")
+        
+
+        dataset = serializer.save(user=request.user, url=None, columns=None)
+
         try:
             buffer = BytesIO()
             for chunk in csv_file.chunks():
                 buffer.write(chunk)
             buffer.seek(0)
-
-            response = requests.post(
-                url=CLOUD_URL,
-                files={"file": (csv_file.name, buffer, "text/csv")},
-                headers={"Authorization": CLOUD_HEADER}
+            response = requests.put(
+                url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
+                data=buffer.getvalue(),
+                headers={
+                    "Authorization": f"Bearer {CLOUD_API_KEY}",
+                    "Content-Type": "text/csv"
+                }
             )
-            if response.status_code not in (200, 201):
-                raise ValueError(f"Cloud error: {response.status_code} -> {response.text}")
+            response.raise_for_status()
+            
             key = response.json().get("Key")
+            if not key:
+                raise ValueError("Cloud did not return a file key")
+
             buffer.seek(0)
             columns = list(pd.read_csv(buffer).columns)
-            if not key:
-                raise ValueError("Error while sending CSV file to the cloud")
-            serializer.save(url=key, columns=columns)
+
+            dataset.url = CLOUD_URL + key
+            dataset.columns = columns
+            dataset.user=request.user
+            dataset.save()
+
         except Exception as e:
             logging.error(e)
+            dataset.delete()
             raise
 
 

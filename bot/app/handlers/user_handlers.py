@@ -382,9 +382,9 @@ async def category_enter_name_admin(message: Message, state: FSMContext):
 # Редактирование распределения
 #===========================================================================================================================
 
-@router.callback_query(F.data == "edit_distribution")
+@router.callback_query(F.data.startswith("edit_distribution"))
 async def distribution_edit_callback(callback: CallbackQuery, state: FSMContext):
-    distribution_id = callback.data.split(" ")[2]
+    distribution_id = callback.data.split("_")[2]
     await state.update_data(id = distribution_id)
     build_log_message(
         telegram_id=callback.from_user.id,
@@ -555,90 +555,133 @@ async def distribution_delete_callback_admin(callback: CallbackQuery, state: FSM
         payload="delete_distribution"
     )
 
-"""
 #===========================================================================================================================
-# Редактирование сета
+# Создание датасета
 #===========================================================================================================================
-@router.callback_query(F.data.startswith("edit_category_"))
-async def category_edit_callback_admin(callback: CallbackQuery, state: FSMContext):
+
+@router.callback_query(F.data == "create_dataset")
+async def dataset_create_callback(callback: CallbackQuery, state: FSMContext):
     build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
-        payload="edit_set"
+        payload="create_dataset"
     )
+    await state.clear()
+    await callback.message.answer("Введите название нового датасета")
+    await state.set_state(Dataset.name)
+    await callback.answer()
+
+
+@router.message(Dataset.name)
+async def load_dataset(message: Message, state: FSMContext):
+    await state.set_state(Dataset.file)
+    name = (message.text).strip()
+    await state.update_data(name = name)
+    await message.answer("Отправте файл CSV с датасетом")
+
+
+
+@router.message(F.document, Dataset.file)
+async def get_dataset_file(message: Message, state: FSMContext, bot:Bot):
+    try:
+        data = await state.get_data()
+        file_id = message.document.file_id
+        file_name = message.document.file_name
+        file = await bot.get_file(file_id)
+        file_path = file.file_path
+        file_bytes = await bot.download_file(file_path)
+        buffer = io.BytesIO()
+        buffer.write(file_bytes.read())
+        buffer.seek(0)  
+        result = await post_dataset(telegram_id=message.from_user.id, name=data.get("name", file_name), csv_buffer=buffer)
+        if not result:
+            await message.answer("Ошибка при загрузке файла", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=message.from_user.id))
+        else:
+            await message.answer("Датасет успешно загружен!", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=message.from_user.id))
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        logging.error("Error while loading the dataset")
+
+
+#===========================================================================================================================
+# Редактирование датасета
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("edit_dataset"))
+async def dataset_edit_callback(callback: CallbackQuery, state: FSMContext):
+    dataset_id = callback.data.strip().split("_")[2]
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="inline",
+        payload="edit_dataset"
+    )
+    await state.clear()
+    await state.update_data(id = dataset_id)
+    await callback.message.answer("Введите название нового датасета")
+    await state.set_state(DatasetEdit.name)
+    await callback.answer()
+
+
+@router.message(DatasetEdit.name)
+async def edit_load_dataset(message: Message, state: FSMContext):
+    await state.set_state(DatasetEdit.file)
+    name = (message.text).strip()
+    await state.update_data(name = name)
+    await message.answer("Отправте файл CSV с датасетом")
+
+
+
+@router.message(F.document, DatasetEdit.file)
+async def get_dataset_file(message: Message, state: FSMContext, bot:Bot):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        if not dataset_id:
+            raise ValueError("Error while loading dataset id")
+        file_id = message.document.file_id
+        file_name = message.document.file_name
+        file = await bot.get_file(file_id)
+        file_path = file.file_path
+        file_bytes = await bot.download_file(file_path)
+        buffer = io.BytesIO()
+        buffer.write(file_bytes.read())
+        buffer.seek(0)  
+        result = await put_dataset(telegram_id=message.from_user.id, dataset_id=dataset_id, name=data.get("name", file_name), csv_buffer=buffer)
+        if not result:
+            await message.answer("Ошибка при загрузке файла", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=message.from_user.id))
+        else:
+            await message.answer("Датасет успешно загружен!", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=message.from_user.id))
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        logging.error("Error while loading the dataset")
+
+#===========================================================================================================================
+# Удаление датасета
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("delete_dataset_"))
+async def dataset_delete_callback_admin(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
     category_id = callback.data.split("_")[2]
-    await state.set_state(Set.handle_edit_set)
-    await state.update_data(category_id = category_id)
-    await callback.message.answer("Введите новое название сета")
-
-
-@router.message(Set.handle_edit_set)
-async def category_edit_callback_admin_description(message: Message, state: FSMContext):
-    name = (message.text).strip()
-    await state.update_data(name = name)
-    await message.answer("Введите новое описание набора моделей экономики")
-    await state.set_state(Set.edit_description)
-
-
-@router.message(Set.edit_description)
-async def category_edit_name_admin(message: Message, state: FSMContext):
-    data = await state.get_data()
-    category_id = data.get("category_id")
-    name = data.get("name")
-    description = (message.text).strip()
-    response = await put_set(telegram_id=message.from_user.id, name=name, category_id=category_id, description=description)
+    response = await delete_dataset(telegram_id=callback.from_user.id, dataset_id=category_id)
     if not response:
-        await message.answer("Извините, не удалось отредактировать сет", reply_markup=inline_keyboards.main)
+        await callback.message.answer("Извините, не удалось удалить dataset", reply_markup=inline_keyboards.main)
         return
-    await message.answer("Сет отредактирован!", reply_markup=await get_catalogue(telegram_id = message.from_user.id))
+    await callback.message.answer("Датасет удален!", reply_markup=await get_distributions_catalogue(telegram_id = callback.from_user.id))
     await state.clear()
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="inline",
+        payload="delete_dataset"
+    )
 
 
-
-
-
-#===========================================================================================================================
-# Разрешение доступа
-#===========================================================================================================================
-
-
-@router.callback_query(F.data.startswith("access_give"))
-async def give_acess_admin(callback: CallbackQuery, state: FSMContext, bot:Bot):
-    request = str(callback.data)
-    try:
-        user_id = list(request.split("_"))[2]
-        if not user_id:
-            logging.error("Ошибка предоставления доступа")
-            return
-        response = await make_admin(
-            telegram_id= callback.from_user.id,
-            target_user_id= user_id
-        )
-        if not response:
-            logging.error("Ошибка предоставления доступа")
-            await bot.send_message(chat_id=int(user_id), text="К сожалению, вам было отказано в предоставлении прав администратора", reply_markup=inline_keyboards.home)
-        else:
-            logging.info(response)
-            await callback.message.answer("Права администратора были успешно предоставлены", reply_markup=inline_keyboards.home)
-            await bot.send_message(chat_id=user_id, text="Вам были предоставлены права администратора", reply_markup=inline_keyboards.home)
-    except Exception as e:
-        logging.error(e)
-
-
-@router.callback_query(F.data.startswith("access_reject"))
-async def reject_acess_admin(callback: CallbackQuery, state: FSMContext, bot:Bot):
-    request = str(callback.data)
-    try:
-        user_id = list(request.split("_"))[2]
-        await bot.send_message(chat_id=int(user_id), text="К сожалению, вам было отказано в предоставлении прав администратора", reply_markup=inline_keyboards.home)
-    except Exception as e:
-        logging.error(e)
-    finally:
-        await state.clear()
-"""
 #===========================================================================================================================
 # Заглушка
 #===========================================================================================================================

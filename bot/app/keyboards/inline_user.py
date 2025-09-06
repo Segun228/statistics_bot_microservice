@@ -71,11 +71,12 @@ no_posts = InlineKeyboardMarkup(
 async def get_datasets_catalogue(telegram_id, datasets = None):
     if datasets is None:
         datasets = await get_datasets(telegram_id=telegram_id)
+        print(datasets)
     keyboard = InlineKeyboardBuilder()
     pprint(datasets)
     if datasets and datasets is not None:
         for dataset in datasets:
-            keyboard.add(InlineKeyboardButton(text=f"{dataset.get('name')}", callback_data=f"dataset_{dataset.get('id')}"))
+            keyboard.add(InlineKeyboardButton(text=f"{dataset.get('name', dataset.get("columns", "Безымянный датасет"))}", callback_data=f"dataset_{dataset.get('id')}"))
     keyboard.add(InlineKeyboardButton(text="Добавить датасет ✨", callback_data="create_dataset"))
     keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
     return keyboard.adjust(1).as_markup()
@@ -100,27 +101,33 @@ async def give_acess(user_id):
 
 
 async def get_distribution_single_menu(distribution_id, telegram_id, distribution):
-    pass
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_distribution_{distribution_id}"))
+    keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_distribution_{distribution_id}"))
+    return keyboard.adjust(1).as_markup()
 
 
 async def get_dataset_single_menu(dataset_id, telegram_id, dataset):
-    pass
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_dataset_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_dataset_{dataset_id}"))
+    return keyboard.adjust(1).as_markup()
 
 DISTRIBUTION_CHOICES = [
-    ("normal", "Normal \(Нормальное\)"),
-    ("binomial", "Binomial \(Биномиальное\)"),
-    ("poisson", "Poisson \(Пуассон\)"),
-    ("uniform", "Uniform \(Равномерное\)"),
-    ("exponential", "Exponential \(Экспоненциальное\)"),
-    ("beta", "Beta \(Бета\)"),
-    ("gamma", "Gamma \(Гамма\)"),
-    ("lognormal", "Log-normal \(Лог-нормальное\)"),
-    ("chi2", "Chi-squared \(Хи-квадрат\)"),
-    ("t", "Student t \(Стьюдента\)"),
-    ("f", "F-distribution \(Фишера\)"),
-    ("geometric", "Geometric \(Геометрическое\)"),
-    ("hypergeom", "Hypergeometric \(Гипергеометрическое\)"),
-    ("negative_binomial", "Negative Binomial \(Отрицательно биномиальное\)"),
+    ("normal", "Normal (Нормальное)"),
+    ("binomial", "Binomial (Биномиальное)"),
+    ("poisson", "Poisson (Пуассон)"),
+    ("uniform", "Uniform (Равномерное)"),
+    ("exponential", "Exponential (Экспоненциальное)"),
+    ("beta", "Beta (Бета)"),
+    ("gamma", "Gamma (Гамма)"),
+    ("lognormal", "Log-normal (Лог-нормальное)"),
+    ("chi2", "Chi-squared (Хи-квадрат)"),
+    ("t", "Student t (Стьюдента)"),
+    ("f", "F-distribution (Фишера)"),
+    ("geometric", "Geometric (Геометрическое)"),
+    ("hypergeom", "Hypergeometric (Гипергеометрическое)"),
+    ("negative_binomial", "Negative Binomial (Отрицательно биномиальное)"),
 ]
 
 async def choose_distribution_type():

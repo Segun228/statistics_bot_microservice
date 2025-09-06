@@ -35,7 +35,7 @@ class Distribution(models.Model):
 class Dataset(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="datasets")
     name = models.CharField(max_length=100, null=False, blank=False, default="Датасет")
-    columns = ArrayField(base_field=models.CharField(max_length=100))
+    columns = ArrayField(base_field=models.CharField(max_length=100), blank=True, null=True)
     url = models.URLField(max_length=1000, null=True, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
