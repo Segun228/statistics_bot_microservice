@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from typing import Iterable
-from app.requests.get.get_sets import get_sets
+
 
 main = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -57,17 +57,6 @@ no_posts = InlineKeyboardMarkup(
     ]
 )
 
-
-async def get_catalogue(telegram_id, categories = None):
-    if categories is None:
-        categories = await get_sets(telegram_id=telegram_id)
-    keyboard = InlineKeyboardBuilder()
-    if categories and categories is not None:
-        for category in categories:
-            keyboard.add(InlineKeyboardButton(text=f"{category.get('name')}", callback_data=f"category_{category.get('id')}"))
-    keyboard.add(InlineKeyboardButton(text="Создать категорию ✨", callback_data="create_category"))
-    keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
-    return keyboard.adjust(1).as_markup()
 
 
 async def get_posts(posts, category):

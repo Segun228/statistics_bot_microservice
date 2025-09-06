@@ -20,28 +20,21 @@ from app.states.states import Distribution, Send, File, Dataset
 from aiogram.types import BufferedInputFile
 
 
-from app.keyboards.inline_user import get_catalogue, get_posts
+from app.keyboards.inline_user import get_distributions_catalogue, get_datasets_catalogue
 
 from app.filters.IsAdmin import IsAdmin
 
 from app.requests.user.login import login
 from app.requests.helpers.get_cat_error import get_cat_error_async
-from app.requests.get.get_sets import get_sets
-from app.requests.get.get_post import get_post
+from app.requests.get.get_datasets import get_datasets
+from app.requests.get.get_distributions import get_distributions
 
 from app.requests.helpers.get_cat_error import get_cat_error_async
 
-from bot.app.requests.post.post_dataset import post_set
-from app.requests.post.postPost import post_post
-from bot.app.requests.put.put_distribution import put_set
-from app.requests.put.putPost import put_post
-from bot.app.requests.delete.deleteDistribution import delete_category
-from app.requests.delete.deletePost import delete_post
+
 from app.requests.user.get_alive import get_alive
 from app.requests.user.make_admin import make_admin
 
-from app.requests.files.get_report import get_report
-from app.requests.files.put_report import put_report
 
 from app.kafka.utils import build_log_message
 #===========================================================================================================================

@@ -21,7 +21,7 @@ async def get_distributions(telegram_id):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/datasets/" 
+        exact_url = f"{base_url}api/distributions/" 
         logging.debug(f"Sending to {exact_url}")
         
         async with session.get(
@@ -35,7 +35,7 @@ async def get_distributions(telegram_id):
                 return None
 
 
-async def retrieve_dataset(telegram_id, dataset_id):
+async def retrieve_distribution(telegram_id, distribution_id):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -50,7 +50,7 @@ async def retrieve_dataset(telegram_id, dataset_id):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/datasets/{dataset_id}/" 
+        exact_url = f"{base_url}api/distributions/{distribution_id}/" 
         logging.debug(f"Sending to {exact_url}")
         
         async with session.get(

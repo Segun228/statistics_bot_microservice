@@ -5,13 +5,30 @@ class Distribution(StatesGroup):
     handle_distribution = State()
     handle_edit_distribution = State()
     name = State()
+    distribution_type = State()
     params = State()
     description = State()
     edit_distribution = State()
     distribution_id = State()
 
+class DistributionEdit(StatesGroup):
+    handle_distribution = State()
+    handle_edit_distribution = State()
+    name = State()
+    distribution_type = State()
+    params = State()
+    description = State()
+    edit_distribution = State()
+    distribution_id = State()
 
 class Dataset(StatesGroup):
+    handle_dataset = State()
+    handle_edit_dataset = State()
+    name = State()
+    file = State()
+
+
+class DatasetEdit(StatesGroup):
     handle_dataset = State()
     handle_edit_dataset = State()
     name = State()

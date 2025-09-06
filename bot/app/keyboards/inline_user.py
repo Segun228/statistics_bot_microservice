@@ -1,7 +1,9 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from typing import Iterable
-from app.requests.get.get_sets import get_sets
+from app.requests.get.get_datasets import get_datasets
+from app.requests.get.get_distributions import get_distributions
+from pprint import pprint
 
 main = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -70,6 +72,7 @@ async def get_datasets_catalogue(telegram_id, datasets = None):
     if datasets is None:
         datasets = await get_datasets(telegram_id=telegram_id)
     keyboard = InlineKeyboardBuilder()
+    pprint(datasets)
     if datasets and datasets is not None:
         for dataset in datasets:
             keyboard.add(InlineKeyboardButton(text=f"{dataset.get('name')}", callback_data=f"dataset_{dataset.get('id')}"))
@@ -80,6 +83,7 @@ async def get_datasets_catalogue(telegram_id, datasets = None):
 async def get_distributions_catalogue(telegram_id, distributions = None):
     if distributions is None:
         distributions = await get_distributions(telegram_id=telegram_id)
+    pprint(distributions)
     keyboard = InlineKeyboardBuilder()
     if distributions and distributions is not None:
         for distribution in distributions:
@@ -92,4 +96,35 @@ async def give_acess(user_id):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(InlineKeyboardButton(text="Разрешить ✅", callback_data=f"access_give_{user_id}"))
     keyboard.add(InlineKeyboardButton(text="Отклонить ❌", callback_data=f"access_reject_{user_id}"))
+    return keyboard.adjust(1).as_markup()
+
+
+async def get_distribution_single_menu(distribution_id, telegram_id, distribution):
+    pass
+
+
+async def get_dataset_single_menu(dataset_id, telegram_id, dataset):
+    pass
+
+DISTRIBUTION_CHOICES = [
+    ("normal", "Normal \(Нормальное\)"),
+    ("binomial", "Binomial \(Биномиальное\)"),
+    ("poisson", "Poisson \(Пуассон\)"),
+    ("uniform", "Uniform \(Равномерное\)"),
+    ("exponential", "Exponential \(Экспоненциальное\)"),
+    ("beta", "Beta \(Бета\)"),
+    ("gamma", "Gamma \(Гамма\)"),
+    ("lognormal", "Log-normal \(Лог-нормальное\)"),
+    ("chi2", "Chi-squared \(Хи-квадрат\)"),
+    ("t", "Student t \(Стьюдента\)"),
+    ("f", "F-distribution \(Фишера\)"),
+    ("geometric", "Geometric \(Геометрическое\)"),
+    ("hypergeom", "Hypergeometric \(Гипергеометрическое\)"),
+    ("negative_binomial", "Negative Binomial \(Отрицательно биномиальное\)"),
+]
+
+async def choose_distribution_type():
+    keyboard = InlineKeyboardBuilder()
+    for typum in DISTRIBUTION_CHOICES:
+        keyboard.add(InlineKeyboardButton(text=f"{typum[1]}", callback_data=typum[0]))
     return keyboard.adjust(1).as_markup()

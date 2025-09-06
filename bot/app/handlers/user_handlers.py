@@ -3,6 +3,7 @@ import logging
 import re
 import zipfile
 import io
+import json
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram import F
@@ -17,46 +18,36 @@ from aiogram.types import InputFile
 
 from app.keyboards import inline_user as inline_keyboards
 
-from app.states.states import Send, File, Distribution, Dataset
+from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit
 
 from aiogram.types import BufferedInputFile
 
 
-from app.keyboards.inline_user import get_catalogue, get_posts
+from app.keyboards.inline_user import get_datasets_catalogue, get_distributions_catalogue
 
 from app.filters.IsAdmin import IsAdmin
 
 from app.requests.user.login import login
 from app.requests.helpers.get_cat_error import get_cat_error_async
-from app.requests.get.get_sets import get_sets, retrieve_set
-from app.requests.get.get_post import get_post
 
 from app.requests.helpers.get_cat_error import get_cat_error_async
 
-from bot.app.requests.post.post_dataset import post_set
-from app.requests.post.postPost import post_post
-from bot.app.requests.put.put_distribution import put_set
-from app.requests.put.putPost import put_post
-from bot.app.requests.delete.deleteDistribution import delete_category
-from app.requests.delete.deletePost import delete_post
 from app.requests.user.get_alive import get_alive
 from app.requests.user.make_admin import make_admin
 
-from app.requests.files.get_report import get_report
-from app.requests.files.put_report import put_report
-
-from app.requests.units import get_unit_report, get_unit_bep, get_unit_exel
-from app.requests.put import update_model_cohort_data
-from app.requests.units.get_unit_cohort import get_unit_cohort
-
-from app.requests.sets.set_generate_report import set_generate_report
-from app.requests.sets.set_visualize import set_visualize
-from app.requests.sets.get_set_cohort import get_set_cohort
-
-
 from app.kafka.utils import build_log_message
 
-from app.requests.sets.set_text_report import set_text_report
+from app.requests.get.get_datasets import get_datasets, retrieve_dataset
+from app.requests.get.get_distributions import get_distributions, retrieve_distribution
+
+from app.requests.post.post_dataset import post_dataset
+from app.requests.post.post_distribution import post_distribution
+
+from app.requests.put.put_dataset import put_dataset
+from app.requests.put.put_distribution import put_distribution
+
+from app.requests.delete.delete_dataset import delete_dataset
+from app.requests.delete.deleteDistribution import delete_distribution
 #===========================================================================================================================
 # Конфигурация основных маршрутов
 #===========================================================================================================================
@@ -158,91 +149,413 @@ async def catalogue_callback_admin(callback: CallbackQuery):
         source="menu",
         payload="catalogue"
     )
-    categories = await get_sets(telegram_id=callback.from_user.id)
     await callback.message.answer("Что именно вас интересует?👇", reply_markup = inline_keyboards.catalogue_choice)
     await callback.answer()
 
 
 @router.callback_query(F.data == "distributions")
-async def get_distributions_catalogue(callback: CallbackQuery):
+async def get_distributions_inline_catalogue(callback: CallbackQuery):
     await callback.answer()
     await callback.message.answer("Отлично, вот ваши распределения!", reply_markup = await inline_keyboards.get_distributions_catalogue(telegram_id=callback.from_user.id))
 
 
 
+
 @router.callback_query(F.data == "datasets")
-async def get_datasets_catalogue(callback: CallbackQuery):
+async def get_datasets_inline_catalogue(callback: CallbackQuery):
     await callback.answer()
     await callback.message.answer("Отлично, вот ваши датасеты!", reply_markup = await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
 
 
 @router.callback_query(F.data.startswith("distribution_"))
-async def category_catalogue_callback_admin(callback: CallbackQuery):
+async def distribution_catalogue_callback_admin(callback: CallbackQuery):
     await callback.answer()
-    category_id = callback.data.split("_")[1]
+    distribution_id = callback.data.split("_")[1]
     build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="menu",
-        payload=f"category_{category_id}"
+        payload=f"distribution_{distribution_id}"
     )
-    categories = await get_sets(telegram_id=callback.from_user.id)
-    current_category = None
-    if categories is not None:
-        for category in categories:
-            if str(category.get("id")) == str(category_id):
-                current_category = category
-                break
-    
-    if current_category is None or current_category.get("units") is None or current_category.get("units") == []:
-        await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_posts(posts=current_category.get("units"), category=current_category ))
+    current_distribution = await retrieve_distribution(telegram_id=callback.from_user.id, distribution_id=distribution_id)
+    if current_distribution is None:
+        await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
         await callback.answer()
         return
-    await callback.message.answer("Вот доступные модели юнит-экономики👇", reply_markup= await get_posts(category= current_category ,posts = current_category.get("units", [])))
+    data = current_distribution
+    params = json.loads(data['distribution_parameters'].replace("'", '"'))
+    param_string = "\n"
+    for key, value in params.items():
+        param_string += f" \- *{key}* \= {value}\n"
+    param_string += "\n\n"
+    msg = (
+        f"*Name:* {data['name']}\n"
+        f"*Type:* {data['distribution_type']}\n"
+        f"*Parameters:* {param_string}"
+    )
+    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_distribution_single_menu(distribution_id = distribution_id, telegram_id = callback.from_user.id, distribution = current_distribution))
 
 
+
+@router.callback_query(F.data.startswith("dataset_"))
+async def dataset_catalogue_callback_admin(callback: CallbackQuery):
+    await callback.answer()
+    dataset_id = callback.data.split("_")[1]
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="menu",
+        payload=f"dataset_{dataset_id}"
+    )
+    current_dataset = await retrieve_dataset(telegram_id=callback.from_user.id, dataset_id=dataset_id)
+    if current_dataset is None:
+        await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+        await callback.answer()
+        return
+    data = current_dataset
+    params = data['columns']
+    param_string = "\n"
+    for nam in params:
+        param_string += f"*{nam}*\n"
+    param_string += "\n"
+    msg = (
+        f"*Name:* {data['name']}\n"
+        f"*Columns:* {param_string}"
+    )
+    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id, telegram_id = callback.from_user.id, dataset = current_dataset))
 
 
 #===========================================================================================================================
-# Создание сета
+# Создание распределения
 #===========================================================================================================================
-"""
 
-@router.callback_query(F.data == "create_category")
-async def category_create_callback_admin(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data == "create_distribution")
+async def distribution_create_callback(callback: CallbackQuery, state: FSMContext):
     build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
-        payload="create_category"
+        payload="create_distribution"
     )
     await state.clear()
-    await callback.message.answer("Введите название набора моделей экономики")
-    await state.set_state(Set.handle_set)
+    await callback.message.answer("Введите название нового распределения")
+    await state.set_state(Distribution.name)
     await callback.answer()
 
 
-@router.message(Set.handle_set)
-async def category_create_callback_admin_description(message: Message, state: FSMContext):
+@router.message( Distribution.name)
+async def choose_distrib_type(message: Message, state: FSMContext):
+    await state.set_state(Distribution.distribution_type)
     name = (message.text).strip()
     await state.update_data(name = name)
-    await message.answer("Введите описание набора моделей экономики")
-    await state.set_state(Set.description)
+    current_state = await state.get_state()
+    await message.answer("Выберите необходимый тип распределения", reply_markup=await inline_keyboards.choose_distribution_type())
 
 
-@router.message(Set.description)
+
+@router.callback_query(F.data, Distribution.distribution_type)
+async def distribution_create_callback_admin_description(callback: CallbackQuery, state: FSMContext):
+    distribution_type = (callback.data).strip()
+    await state.update_data(distribution_type = distribution_type)
+    msg = """
+        *🎲 Выберите параметры для распределения*
+
+        Введите параметры *через пробел*\. Ниже указаны параметры, которые поддерживаются для каждого распределения:
+
+        _Примеры:_
+        `mu sigma` — для `normal`  
+        `a b loc scale` — для `beta`
+
+        *Поддерживаемые распределения:*
+
+        • `normal` — `mu sigma`  
+        mu — математическое ожидание  
+        sigma — стандартное отклонение
+
+        • `uniform` — `loc scale`  
+        loc — нижняя граница  
+        scale — ширина \(scale \= верхняя \- нижняя\)
+
+        • `exponential` — `loc scale`  
+        loc — смещение  
+        scale — параметр масштаба \(1/λ\)
+
+        • `gamma` — `a loc scale`  
+        a — shape \(форма\)  
+        loc — смещение  
+        scale — масштаб
+
+        • `beta` — `a b loc scale`  
+        a — alpha \(форма\)  
+        b — beta \(форма\)  
+        loc — смещение  
+        scale — масштаб
+
+        • `binomial` — `n p`  
+        n — число испытаний  
+        p — вероятность успеха
+
+        • `poisson` — `mu`  
+        mu — среднее число событий
+
+        • `chi2` — `df loc scale`  
+        df — степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `t` — `df loc scale`  
+        df — степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `f` — `dfn dfd loc scale`  
+        dfn — числитель степени свободы  
+        dfd — знаменатель степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `lognormal` — `s loc scale`  
+        s — стандартное отклонение log  
+        loc — смещение  
+        scale — масштаб \(exp\(mean\)\)
+
+        • `geometric` — `p`  
+        p — вероятность успеха
+
+        • `hypergeom` — `M n N`  
+        M — общее количество объектов  
+        n — количество "успешных" объектов  
+        N — размер выборки
+
+        • `negative_binomial` — `n p`  
+        n — число успехов  
+        p — вероятность успеха
+        _Если вы введёте неправильное количество параметров, будет использовано значение по умолчанию:_  
+        `normal` с параметрами `mu=0`, `sigma=1`
+        """
+    await callback.message.answer(text = msg, parse_mode="MarkdownV2")
+    await state.set_state(Distribution.params)
+
+
+@router.message(Distribution.params)
 async def category_enter_name_admin(message: Message, state: FSMContext):
-    description = (message.text).strip()
+    params = list((message.text).strip().split(" "))
     data = await state.get_data()
     name = data.get("name")
-    response = await post_set(telegram_id=message.from_user.id, name=name, description= description)
+    distribution_type = data.get("distribution_type").strip()
+    distribution_params = {
+        "normal": ["mu", "sigma"],
+        "binomial": ["n", "p"],
+        "poisson": ["mu"],
+        "uniform": ["loc", "scale"],
+        "exponential": ["loc", "scale"],
+        "beta": ["a", "b", "loc", "scale"],
+        "gamma": ["a", "loc", "scale"],
+        "lognormal": ["s", "loc", "scale"],
+        "chi2": ["df", "loc", "scale"],
+        "t": ["df", "loc", "scale"],
+        "f": ["dfn", "dfd", "loc", "scale"],
+        "geometric": ["p"],
+        "hypergeom": ["M", "n", "N"],
+        "negative_binomial": ["n", "p"]
+    }
+    param_names = distribution_params[distribution_type]
+    if len(param_names) != len(params):
+        distribution_type = "normal"
+        final_params = {
+            "mu":0,
+            "sigma":1
+        }
+    else:
+        final_params = {}
+        for nam, par in zip(param_names, params):
+            final_params[nam] = par
+    response = await post_distribution(telegram_id=message.from_user.id, name=name, distribution_type=distribution_type, distribution_parameters=final_params)
     if not response:
-        await message.answer("Извините, не удалось создать набор моделей", reply_markup=inline_keyboards.main)
+        await message.answer("Извините, не удалось создать распределение", reply_markup=inline_keyboards.main)
         return
-    await message.answer("Набор моделей создан!", reply_markup= await get_catalogue(telegram_id = message.from_user.id))
+    await message.answer("Распределение создано!", reply_markup= await get_distributions_catalogue(telegram_id = message.from_user.id))
     await state.clear()
 
 
+#===========================================================================================================================
+# Редактирование распределения
+#===========================================================================================================================
+
+@router.callback_query(F.data == "edit_distribution")
+async def distribution_edit_callback(callback: CallbackQuery, state: FSMContext):
+    distribution_id = callback.data.split(" ")[2]
+    await state.update_data(id = distribution_id)
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="inline",
+        payload="edit_distribution"
+    )
+    await state.clear()
+    await callback.message.answer("Введите название нового распределения")
+    await state.set_state(Distribution.name)
+    await callback.answer()
+
+
+@router.message( Distribution.name)
+async def choose_distrib_type_edit(message: Message, state: FSMContext):
+    await state.set_state(Distribution.distribution_type)
+    name = (message.text).strip()
+    await state.update_data(name = name)
+    current_state = await state.get_state()
+    await message.answer("Выберите необходимый тип распределения", reply_markup=await inline_keyboards.choose_distribution_type())
+
+
+
+@router.callback_query(F.data, Distribution.distribution_type)
+async def distribution_edit_callback_admin_description(callback: CallbackQuery, state: FSMContext):
+    distribution_type = (callback.data).strip()
+    await state.update_data(distribution_type = distribution_type)
+    msg = """
+        *🎲 Выберите параметры для распределения*
+
+        Введите параметры *через пробел*\. Ниже указаны параметры, которые поддерживаются для каждого распределения:
+
+        _Примеры:_
+        `mu sigma` — для `normal`  
+        `a b loc scale` — для `beta`
+
+        *Поддерживаемые распределения:*
+
+        • `normal` — `mu sigma`  
+        mu — математическое ожидание  
+        sigma — стандартное отклонение
+
+        • `uniform` — `loc scale`  
+        loc — нижняя граница  
+        scale — ширина \(scale \= верхняя \- нижняя\)
+
+        • `exponential` — `loc scale`  
+        loc — смещение  
+        scale — параметр масштаба \(1/λ\)
+
+        • `gamma` — `a loc scale`  
+        a — shape \(форма\)  
+        loc — смещение  
+        scale — масштаб
+
+        • `beta` — `a b loc scale`  
+        a — alpha \(форма\)  
+        b — beta \(форма\)  
+        loc — смещение  
+        scale — масштаб
+
+        • `binomial` — `n p`  
+        n — число испытаний  
+        p — вероятность успеха
+
+        • `poisson` — `mu`  
+        mu — среднее число событий
+
+        • `chi2` — `df loc scale`  
+        df — степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `t` — `df loc scale`  
+        df — степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `f` — `dfn dfd loc scale`  
+        dfn — числитель степени свободы  
+        dfd — знаменатель степени свободы  
+        loc — смещение  
+        scale — масштаб
+
+        • `lognormal` — `s loc scale`  
+        s — стандартное отклонение log  
+        loc — смещение  
+        scale — масштаб \(exp\(mean\)\)
+
+        • `geometric` — `p`  
+        p — вероятность успеха
+
+        • `hypergeom` — `M n N`  
+        M — общее количество объектов  
+        n — количество "успешных" объектов  
+        N — размер выборки
+
+        • `negative_binomial` — `n p`  
+        n — число успехов  
+        p — вероятность успеха
+        _Если вы введёте неправильное количество параметров, будет использовано значение по умолчанию:_  
+        `normal` с параметрами `mu=0`, `sigma=1`
+        """
+    await callback.message.answer(text = msg, parse_mode="MarkdownV2")
+    await state.set_state(Distribution.params)
+
+
+@router.message(Distribution.params)
+async def category_edit_name_admin(message: Message, state: FSMContext):
+    params = list((message.text).strip().split(" "))
+    data = await state.get_data()
+    id = data.get("id")
+    name = data.get("name")
+    distribution_type = data.get("distribution_type").strip()
+    distribution_params = {
+        "normal": ["mu", "sigma"],
+        "binomial": ["n", "p"],
+        "poisson": ["mu"],
+        "uniform": ["loc", "scale"],
+        "exponential": ["loc", "scale"],
+        "beta": ["a", "b", "loc", "scale"],
+        "gamma": ["a", "loc", "scale"],
+        "lognormal": ["s", "loc", "scale"],
+        "chi2": ["df", "loc", "scale"],
+        "t": ["df", "loc", "scale"],
+        "f": ["dfn", "dfd", "loc", "scale"],
+        "geometric": ["p"],
+        "hypergeom": ["M", "n", "N"],
+        "negative_binomial": ["n", "p"]
+    }
+    param_names = distribution_params[distribution_type]
+    if len(param_names) != len(params):
+        distribution_type = "normal"
+        final_params = {
+            "mu":0,
+            "sigma":1
+        }
+    else:
+        final_params = {}
+        for nam, par in zip(param_names, params):
+            final_params[nam] = par
+    response = await put_distribution(telegram_id=message.from_user.id, distribution_id=id, name=name, distribution_type=distribution_type, distribution_parameters=final_params)
+    if not response:
+        await message.answer("Извините, не удалось изменить распределение", reply_markup=inline_keyboards.main)
+        return
+    await message.answer("Распределение изменено!", reply_markup= await get_distributions_catalogue(telegram_id = message.from_user.id))
+    await state.clear()
+
+#===========================================================================================================================
+# Удаление распрделения 
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("delete_distribution_"))
+async def distribution_delete_callback_admin(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    category_id = callback.data.split("_")[2]
+    response = await delete_distribution(telegram_id=callback.from_user.id, distribution_id=category_id)
+    if not response:
+        await callback.message.answer("Извините, не удалось удалить распределение", reply_markup=inline_keyboards.main)
+        return
+    await callback.message.answer("Распределение удалено!", reply_markup=await get_distributions_catalogue(telegram_id = callback.from_user.id))
+    await state.clear()
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="inline",
+        payload="delete_distribution"
+    )
+
+"""
 #===========================================================================================================================
 # Редактирование сета
 #===========================================================================================================================
@@ -283,27 +596,7 @@ async def category_edit_name_admin(message: Message, state: FSMContext):
     await message.answer("Сет отредактирован!", reply_markup=await get_catalogue(telegram_id = message.from_user.id))
     await state.clear()
 
-#===========================================================================================================================
-# Удаление сета   
-#===========================================================================================================================
 
-@router.callback_query(F.data.startswith("delete_category_"))
-async def category_delete_callback_admin(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await state.clear()
-    category_id = callback.data.split("_")[2]
-    response = await delete_category(telegram_id=callback.from_user.id, category_id=category_id)
-    if not response:
-        await callback.message.answer("Извините, не удалось удалить категорию", reply_markup=inline_keyboards.main)
-        return
-    await callback.message.answer("Категория удалена!", reply_markup=await get_catalogue(telegram_id = callback.from_user.id))
-    await state.clear()
-    build_log_message(
-        telegram_id=callback.from_user.id,
-        action="callback",
-        source="inline",
-        payload="delete_set"
-    )
 
 
 
