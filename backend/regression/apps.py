@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class KafkaConfig(AppConfig):
+class RegressionConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'kafka'
+    name = 'regression'

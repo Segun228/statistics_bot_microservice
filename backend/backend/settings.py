@@ -39,12 +39,12 @@ INSTALLED_APPS = [
     "users",
     "analytics",
     "backend.apps.MyAppConfig",
-    "kafka",
+    "kafka_broker",
     'drf_spectacular',
     'drf_spectacular_sidecar',
     "rest_framework",
     "corsheaders",
-    "redis",
+    "redis_cache",
     "signals",
     "regression"
 ]

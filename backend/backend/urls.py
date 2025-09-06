@@ -8,7 +8,7 @@ from django.urls import path, include
 from users.urls import urlpatterns as auth_urls
 from api.urls import urlpatterns as api_urls
 from analytics.urls import urlpatterns as analitics_urls
-from redis.urls import urlpatterns as redis_urls
+from redis_cache.urls import urlpatterns as redis_urls
 
 
 urlpatterns = [
