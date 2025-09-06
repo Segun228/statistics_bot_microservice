@@ -1,42 +1,21 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class Set(StatesGroup):
-    handle_set = State()
-    handle_edit_set = State()
+class Distribution(StatesGroup):
+    handle_distribution = State()
+    handle_edit_distribution = State()
     name = State()
+    params = State()
     description = State()
-    edit_description = State()
-    set_id = State()
+    edit_distribution = State()
+    distribution_id = State()
 
-class Unit(StatesGroup):
-    handle_unit = State()
-    handle_edit_unit = State()
-    model_set = State()
+
+class Dataset(StatesGroup):
+    handle_dataset = State()
+    handle_edit_dataset = State()
     name = State()
-    users = State()
-    customers = State()
-    AVP = State()
-    APC = State()
-    TMS = State()
-    COGS = State()
-    COGS1s = State()
-    FC = State()
-
-
-class UnitEdit(StatesGroup):
-    handle_unit = State()
-    handle_edit_unit = State()
-    model_set = State()
-    name = State()
-    users = State()
-    customers = State()
-    AVP = State()
-    APC = State()
-    TMS = State()
-    COGS = State()
-    COGS1s = State()
-    FC = State()
+    file = State()
 
 
 class Send(StatesGroup):
@@ -49,14 +28,3 @@ class File(StatesGroup):
     waiting_for_name = State()
     waiting_for_replace_file = State()
 
-
-class Cohort(StatesGroup):
-    handle_unit = State()
-    retention_rate = State()
-    audience_growth_rate = State()
-
-
-class SetCohort(StatesGroup):
-    handle_unit = State()
-    retention_rate = State()
-    audience_growth_rate = State()

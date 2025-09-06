@@ -6,7 +6,6 @@ from app.requests.get.get_sets import get_sets
 main = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Каталог 📦", callback_data="catalogue")],
-        [InlineKeyboardButton(text="Панель управления 📊", callback_data="file_panel")],
         [InlineKeyboardButton(text="Рассылка ✉️", callback_data="send_menu")],
         [InlineKeyboardButton(text="👤 Аккаунт", callback_data="account_menu")],
         [InlineKeyboardButton(text="📞 Контакты", callback_data="contacts")]

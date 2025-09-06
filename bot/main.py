@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 from app.handlers.router import admin_router, user_router
 from app.middlewares.antiflud import ThrottlingMiddleware
 
-
-from app.handlers import user_handlers
 from app.handlers import admin_handlers
+from app.handlers import user_handlers
 
+from app.filters.IsAdmin import IsAdmin
 
 from app.kafka.utils import ensure_topic_exists
 

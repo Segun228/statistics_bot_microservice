@@ -13,8 +13,9 @@ import asyncio
 from aiogram.types import InputFile
 
 from app.keyboards import inline_admin as inline_keyboards
+from app.keyboards import inline_user as inline_user_keyboards
 
-from app.states.states import Unit, Send, File, Set
+from app.states.states import Distribution, Send, File, Dataset
 
 from aiogram.types import BufferedInputFile
 
@@ -48,7 +49,7 @@ from app.kafka.utils import build_log_message
 #===========================================================================================================================
 
 
-@router.message(CommandStart())
+@router.message(CommandStart(), IsAdmin())
 async def cmd_start_admin(message: Message, state: FSMContext):
     data = await login(telegram_id=message.from_user.id)
     if data is None:
@@ -56,9 +57,9 @@ async def cmd_start_admin(message: Message, state: FSMContext):
         await message.answer("Бот еще не проснулся, попробуйте немного подождать 😔", reply_markup=inline_keyboards.restart)
         return
     await state.update_data(telegram_id = data.get("telegram_id"))
-    await message.reply("Приветствую! 👋")
-    await message.answer("Я ваш персональный финансист. Я помогу вам рассчитать юнит-экономику вашего стартапа, выбрать прибыльную стратугию, а также составить визуализацию и отчетность (чтоб инвесторы вас не съели)")
-    await message.answer("Сейчас ты можешь создавать, удалять и изменять как наборы моделей (программы), так и отдельные модели юнит-экономики")
+    await message.reply("Приветствую Админ! 👋")
+    await message.answer("Я предоставляю полный инструментарий для МатСтата и АБтестов")
+    await message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
     await message.answer("Я много что умею 👇", reply_markup=inline_keyboards.main)
     build_log_message(
         telegram_id=message.from_user.id,
@@ -69,7 +70,7 @@ async def cmd_start_admin(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router.callback_query(F.data == "restart")
+@router.callback_query(F.data == "restart", IsAdmin())
 async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     data = await login(telegram_id=callback.from_user.id)
@@ -78,9 +79,9 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("Бот еще не проснулся, попробуйте немного подождать 😔", reply_markup=inline_keyboards.restart)
         return
     await state.update_data(telegram_id = data.get("telegram_id"))
-    await callback.message.reply("Привет, админ! 👋")
-    await callback.message.answer("Я ваш персональный финансист. Я помогу вам рассчитать юнит-экономику вашего стартапа, выбрать прибыльную стратугию, а также составить визуализацию и отчетность (чтоб инвесторы вас не съели)")
-    await callback.message.answer("Я много что умею 👇", reply_markup=inline_keyboards.main)
+    await callback.message.reply("Приветствую! 👋")
+    await callback.message.answer("Я предоставляю полный инструментарий для МатСтата и АБтестов")
+    await callback.message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
     build_log_message(
         telegram_id=callback.from_user.id,
         action="inline",
@@ -90,38 +91,44 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(Command("help"))
+@router.message(Command("help"), IsAdmin())
 async def cmd_help(message: Message):
-    await message.reply(text="Этот бот помогает рассчитывать юнит экономику, подбирать метрики для заданной прибыли или окупаемости, а также проссчитывать необходимое кол-во юнитов и точку безубыточности\n\n Он может выполнять несколько интересных функций \n\nВы можете выбирать интересующие вас функции, в каждой из них вам будут предоставлены инструкции\n\nЕсли у вас остались вопросы, звоните нам или пишите в тех поддержку, мы всегда на связи:\n\nтелефон коммерческого агента\n\n@dianabol_metandienon_enjoyer", reply_markup=inline_keyboards.home)
+    build_log_message(
+        telegram_id=message.from_user.id,
+        action="command",
+        source="command",
+        payload="help"
+    )
+    await message.reply(text="Этот бот предоставляет доступ к инструментам статистического анализа, а также он специализирован для проведения АБ тестов\n\n Он может выполнять несколько интересных функций \n\nВы можете выбирать интересующие вас функции, в каждой из них вам будут предоставлены инструкции\n\nЕсли у вас остались вопросы, звоните нам или пишите в тех поддержку, мы всегда на связи:\n\n@dianabol_metandienon_enjoyer", reply_markup=inline_keyboards.home)
 
-@router.message(Command("contacts"))
+@router.message(Command("contacts"), IsAdmin())
 async def cmd_contacts(message: Message):
-    text = "Связь с менеджером: 📞\n\n\\тут телефон коммерческого агента\n\n"+"Связь с разрабом: 📞\n\n\\@dianabol\\_metandienon\\_enjoyer 🤝"
+    build_log_message(
+        telegram_id=message.from_user.id,
+        action="command",
+        source="command",
+        payload="contacts"
+    )
+    text = "Связь с разрабом: 📞\n\n\\@dianabol\\_metandienon\\_енjoyer 🤝"
     await message.reply(text=text, reply_markup=inline_keyboards.home, parse_mode='MarkdownV2')
 
-@router.callback_query(F.data == "contacts")
+@router.callback_query(F.data == "contacts", IsAdmin())
 async def contacts_callback(callback: CallbackQuery):
-    text = "Связь с менеджером: 📞\n\n\\тут телефон коммерческого агента\n\n"+"Связь с разрабом: 📞\n\n\\@dianabol\\_metandienon\\_enjoyer 🤝"
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="menu",
+        payload="contacts"
+    )
+    text = "Связь с разрабом: 📞\n\n\\@dianabol\\_metandienon\\_enjoyer 🤝"
     await callback.message.edit_text(text=text, reply_markup=inline_keyboards.home, parse_mode='MarkdownV2')
     await callback.answer()
 
-@router.callback_query(F.data == "main_menu")
-async def main_menu_callback(callback: CallbackQuery):
-    await callback.message.answer("Я много что умею 👇", reply_markup=inline_keyboards.main)
-    await callback.answer()
+
 
 #===========================================================================================================================
 # Создание рассылки
 #===========================================================================================================================
-
-@router.callback_query(F.data == "send_menu", IsAdmin())
-async def send_menu_admin(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(Send.handle)
-    await callback.message.answer(
-        "Извините, вы не обладаете достаточными правами",
-        reply_markup=inline_keyboards.catalogue
-    )
-    return
 
 
 @router.callback_query(F.data == "send_menu", IsAdmin())
@@ -130,7 +137,18 @@ async def send_menu_admin(callback: CallbackQuery, state: FSMContext):
         "Напишите текст сообщения или прикрепите фото с подписью. ",
         reply_markup=inline_keyboards.catalogue
     )
-    
+    await state.set_state(Send.handle)
+    return
+
+
+@router.callback_query(F.data == "send_menu")
+async def send_menu_admin(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Send.handle)
+    await callback.message.answer(
+        "Извините, вы не обладаете достаточными правами",
+        reply_markup=inline_keyboards.catalogue
+    )
+    return
 
 
 @router.message(Send.handle, F.photo, IsAdmin())
@@ -217,117 +235,3 @@ async def reject_acess_admin(callback: CallbackQuery, state: FSMContext, bot:Bot
         await bot.send_message(chat_id=int(user_id), text="К сожалению, вам было отказано в предоставлении прав администратора", reply_markup=inline_keyboards.home)
     except Exception as e:
         logging.error(e)
-
-
-
-#===========================================================================================================================
-# Файловое меню
-#===========================================================================================================================
-
-
-@router.callback_query(F.data == "file_panel", IsAdmin())
-async def file_panel_admin(callback: CallbackQuery, state: FSMContext, bot:Bot):
-    await callback.message.edit_text(
-        "Выберите интересующую функцию",
-        reply_markup= inline_keyboards.file_panel
-    )
-
-
-@router.callback_query(F.data == "get_report", IsAdmin())
-async def send_report_admin(callback: CallbackQuery, state: FSMContext, bot: Bot):
-
-    await callback.answer("Готовлю ваш отчёт...", show_alert=False)
-    docs = await get_report(telegram_id=callback.from_user.id)
-
-    if not docs:
-        await callback.message.answer("Извините, не удалось загрузить отчёт. Обратитесь в поддержку.")
-        return
-
-    await callback.message.answer(
-        "Вот ваш отчёт!"
-    )
-
-    await bot.send_document(
-        chat_id=callback.message.chat.id,
-        document=BufferedInputFile(docs.getvalue(), filename="report.xlsx"),
-        reply_markup=inline_keyboards.file_panel
-    )
-    await state.clear()
-
-
-
-@router.callback_query(F.data == "add_posts", IsAdmin())
-async def file_add_posts_admin(callback: CallbackQuery, state: FSMContext, bot:Bot):
-    await callback.message.answer(
-        "Это текущие позиции"
-    )
-    docs = await get_report(telegram_id=callback.from_user.id)
-    await bot.send_document(
-        chat_id=callback.message.chat.id,
-        document=BufferedInputFile(docs.getvalue(), filename="report.xlsx"),
-    )
-    await callback.message.answer(
-        "Вы в режиме добавления позиций. Отправте в чат файл с позициями, которые хотите добавить, в том же формате"
-    )
-    await state.set_state(File.waiting_for_file)
-
-
-@router.message(File.waiting_for_file, IsAdmin())
-async def upload_add_file_admin(message: Message, state: FSMContext, bot: Bot):
-    try:
-
-        file = await bot.get_file(message.document.file_id)
-        file_bytes = await bot.download_file(file.file_path)
-        response = await put_report(message.from_user.id, file_bytes)
-
-
-        if not response:
-            await message.answer(
-                "К сожалению, не удалось обработать файл. Убедитесь, что формат файла соответствует установленному."
-            )
-            await state.clear()
-            return
-        await message.answer("Файл успешно получен и обработан!", reply_markup= inline_keyboards.file_panel)
-        await state.clear()
-
-    except Exception as e:
-        await state.clear()
-        logging.error(f"Ошибка при обработке Excel: {e}")
-        await message.answer("Не удалось обработать файл. Убедитесь, что это корректный Excel (.xlsx).", reply_markup= inline_keyboards.file_panel)
-
-
-@router.callback_query(F.data == "replace_posts", IsAdmin())
-async def file_replace_posts_admin(callback: CallbackQuery, state: FSMContext, bot:Bot):
-    await callback.message.answer(
-        "Это текущие позиции"
-    )
-    docs = await get_report(telegram_id=callback.from_user.id)
-    await bot.send_document(
-        chat_id=callback.message.chat.id,
-        document=BufferedInputFile(docs.getvalue(), filename="report.xlsx"),
-    )
-    await callback.message.answer(
-        "Вы в режиме полного обновления позиций. Отправте в чат файл с позициями, которые хотите добавить, в том же формате. Будте внимательны, текущие позиции будут удалены"
-    )
-    await state.set_state(File.waiting_for_replace_file)
-
-
-@router.message(File.waiting_for_replace_file, IsAdmin())
-async def upload_replace_file_admin(message: Message, state: FSMContext, bot: Bot):
-    try:
-        file = await bot.get_file(message.document.file_id)
-        file_bytes = await bot.download_file(file.file_path)
-        response = await replace_report(message.from_user.id, file_bytes)
-        if not response:
-            await message.answer(
-                "К сожалению, не удалось обработать файл. Убедитесь, что формат файла соответствует установленному."
-            )
-            await state.clear()
-            return
-        await message.answer("Файл успешно получен и обработан! Позиции обновлены", reply_markup= inline_keyboards.file_panel)
-        await state.clear()
-
-    except Exception as e:
-        logging.error(f"Ошибка при обработке Excel: {e}")
-        await state.clear()
-        await message.answer("Не удалось обработать файл. Убедитесь, что это корректный Excel (.xlsx).", reply_markup= inline_keyboards.file_panel)

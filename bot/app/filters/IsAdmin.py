@@ -13,6 +13,7 @@ admins_string = os.getenv("ADMINS")
 if not admins_string:
     raise ValueError("empty admin list given")
 
+
 admins = {int(x.strip()) for x in admins_string.split("_") if x.strip().isdigit()}
 
 
@@ -25,9 +26,7 @@ class IsAdmin(BaseFilter):
 
 
 def get_admin_id():
-
     admins_string = os.getenv("ADMINS")
     if not admins_string:
         raise ValueError("empty admin list given")
-
     return {int(x.strip()) for x in admins_string.split("_") if x.strip().isdigit()}

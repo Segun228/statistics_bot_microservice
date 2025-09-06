@@ -10,7 +10,9 @@ from rest_framework import status
 from kafka_broker.utils import build_log_message
 
 from django.core.cache import cache
-from django.core.cache import cache
+
+
+import os
 
 class UserListCreateView(ListCreateAPIView):
     serializer_class = UserSerializer
@@ -95,7 +97,14 @@ class GetActiveUsers(ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
-        users = cache.get("users")
+        from dotenv import load_dotenv
+        load_dotenv()
+        if os.getenv("CACHE") and os.getenv("CACHE").lower() in ("true", "1", 1, "yes", "y"):
+            users = cache.get("users")
+            CACHE = True
+        else:
+            users = None
+            CACHE = False
         if users:
             return Response(users)
         build_log_message(
@@ -107,8 +116,9 @@ class GetActiveUsers(ListAPIView):
             response_code=201,
             request_body=request.data,
         )
-        cache.set(
-            key="users",
-            value=self.list(request, *args, **kwargs)
-        )
+        if CACHE:
+            cache.set(
+                key="users",
+                value=self.list(request, *args, **kwargs)
+            )
         return self.list(request, *args, **kwargs)

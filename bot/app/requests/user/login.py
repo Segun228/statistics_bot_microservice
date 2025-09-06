@@ -17,7 +17,14 @@ async def login(telegram_id):
         raise ValueError("No telegram_id was provided")
     
     async with aiohttp.ClientSession() as session:
-        async with session.post(base_url+"auth/user/", data={"telegram_id": telegram_id, "is_alive":True}) as response:
+        async with session.post(
+            base_url+"auth/user/", 
+            data={
+                "telegram_id": telegram_id, 
+                "is_alive":True
+            }, 
+            headers={"Authorization":f"Bot {telegram_id}"}
+        ) as response:
             if response.status == 200 or response.status == 201:
                 data = await response.json()
                 logging.info("Данные успешно получены!")

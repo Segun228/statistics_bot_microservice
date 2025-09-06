@@ -16,11 +16,20 @@ KAFKA_BROKER_DOCKER = os.getenv("KAFKA_BROKER_DOCKER")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC")
 PRODUCER_CLIENT_ID = os.getenv("PRODUCER_CLIENT_ID")
+LOGS = os.getenv("LOGS")
+
 
 if not KAFKA_BROKER_DOCKER:
     raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
+if not LOGS or LOGS.lower() in (0, "0", "false", "no", "nan", 'null', 'none'):
+    LOGS = False
+else:
+    LOGS = True
 
 def ensure_topic_exists():
+    if not LOGS:
+        logging.warning("The logging mode is turned off")
+        return
     admin_client = KafkaAdminClient(
         bootstrap_servers=KAFKA_BROKER_DOCKER,
         client_id="admin_client"
@@ -43,6 +52,9 @@ def ensure_topic_exists():
 _producer = None
 
 def get_producer():
+    if not LOGS:
+        logging.warning("The logging mode is turned off")
+        return
     global _producer
     if _producer is None:
         try:
@@ -68,6 +80,9 @@ def build_log_message(
     env="prod",
     timestamp=None
 ):
+    if not LOGS:
+        logging.warning("The logging mode is turned off")
+        return
     message = {
         "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
         "trace_id": str(uuid.uuid4()),
@@ -89,6 +104,9 @@ def serialize_bytes(obj):
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 def send_to_kafka(data):
+    if not LOGS:
+        logging.warning("The logging mode is turned off")
+        return
     producer = get_producer()
     if producer is None:
         logging.info(f"Kafka not available, skipping log: {data}")
