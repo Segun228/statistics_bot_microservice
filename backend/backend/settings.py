@@ -3,8 +3,9 @@ import os
 from dotenv import load_dotenv
 import dj_database_url  # type: ignore
 
-
 load_dotenv()
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
