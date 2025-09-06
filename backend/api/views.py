@@ -131,6 +131,17 @@ class DistributionListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModel
     def get_queryset(self):
         return Distribution.objects.filter(user=self.request.user)
 
+    def perform_create(self, serializer):
+        load_dotenv()
+
+        request = self.request
+        try:
+            user= request.user
+            serializer.save(user=user)
+        except Exception as e:
+            logging.error(e)
+            raise
+
 
 
 class DistributionRetrieveUpdateDestroyAPIView(AuthenticatedAPIView, LoggingRetrieveUpdateDestroyModelAPIView):

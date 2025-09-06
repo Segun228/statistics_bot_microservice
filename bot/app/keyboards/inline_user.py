@@ -66,47 +66,27 @@ no_posts = InlineKeyboardMarkup(
 
 
 
-async def get_catalogue(telegram_id, categories = None):
-    if categories is None:
-        categories = await get_sets(telegram_id=telegram_id)
+async def get_datasets_catalogue(telegram_id, datasets = None):
+    if datasets is None:
+        datasets = await get_datasets(telegram_id=telegram_id)
     keyboard = InlineKeyboardBuilder()
-    if categories and categories is not None:
-        for category in categories:
-            keyboard.add(InlineKeyboardButton(text=f"{category.get('name')}", callback_data=f"category_{category.get('id')}"))
-    keyboard.add(InlineKeyboardButton(text="Создать сет ✨", callback_data="create_category"))
+    if datasets and datasets is not None:
+        for dataset in datasets:
+            keyboard.add(InlineKeyboardButton(text=f"{dataset.get('name')}", callback_data=f"dataset_{dataset.get('id')}"))
+    keyboard.add(InlineKeyboardButton(text="Добавить датасет ✨", callback_data="create_dataset"))
     keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
     return keyboard.adjust(1).as_markup()
 
-
-async def get_posts(posts, category):
+async def get_distributions_catalogue(telegram_id, distributions = None):
+    if distributions is None:
+        distributions = await get_distributions(telegram_id=telegram_id)
     keyboard = InlineKeyboardBuilder()
-    category_id = category.get("id", 0)
-    if posts is None or posts == [] or posts == ():
-        keyboard.add(InlineKeyboardButton(text="Каталог 📚", callback_data="catalogue"))
-        keyboard.add(InlineKeyboardButton(text="Редактировать сет ✏️", callback_data=f"edit_category_{category_id}"))
-        keyboard.add(InlineKeyboardButton(text="Удалить сет ❌", callback_data=f"delete_category_{category_id}"))
-        keyboard.add(InlineKeyboardButton(text="Создать модель ➕", callback_data=f"create_post_{category_id}"))
-        keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
-        return keyboard.adjust(1).as_markup()
-    for post in posts:
-        keyboard.add(InlineKeyboardButton(text=f"{post.get('name', 'Модель экономики')}", callback_data=f"post_{category_id}_{post.get('id')}"))
-    keyboard.add(InlineKeyboardButton(text="Редактировать сет ✏️", callback_data=f"edit_category_{category_id}"))
-    keyboard.add(InlineKeyboardButton(text="Удалить сет ❌", callback_data=f"delete_category_{category_id}"))
-    keyboard.add(InlineKeyboardButton(text="Создать модель ➕", callback_data=f"create_post_{category_id}"))
-    keyboard.add(InlineKeyboardButton(text="Аналитика", callback_data=f"analise_set_{category_id}"))
+    if distributions and distributions is not None:
+        for distribution in distributions:
+            keyboard.add(InlineKeyboardButton(text=f"{distribution.get('name')}", callback_data=f"distribution_{distribution.get('id')}"))
+    keyboard.add(InlineKeyboardButton(text="Добавить распределение ✨", callback_data="create_distribution"))
     keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
     return keyboard.adjust(1).as_markup()
-
-
-async def get_post_menu(category_id, post_id):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.add(InlineKeyboardButton(text="Аналитика", callback_data=f"analise_unit_{category_id}_{post_id}"))
-    keyboard.add(InlineKeyboardButton(text="Редактировать модель 📝", callback_data=f"edit_post_{category_id}_{post_id}"))
-    keyboard.add(InlineKeyboardButton(text="Удалить модель 🗑️", callback_data=f"delete_post_{category_id}_{post_id}"))
-    keyboard.add(InlineKeyboardButton(text="Каталог 📦", callback_data="catalogue"))
-    keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
-    return keyboard.adjust(1).as_markup()
-
 
 async def give_acess(user_id):
     keyboard = InlineKeyboardBuilder()

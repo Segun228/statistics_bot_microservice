@@ -33,11 +33,11 @@ from app.requests.get.get_post import get_post
 
 from app.requests.helpers.get_cat_error import get_cat_error_async
 
-from app.requests.post.postCategory import post_set
+from bot.app.requests.post.post_dataset import post_set
 from app.requests.post.postPost import post_post
-from app.requests.put.putCategory import put_set
+from bot.app.requests.put.put_distribution import put_set
 from app.requests.put.putPost import put_post
-from app.requests.delete.deleteCategory import delete_category
+from bot.app.requests.delete.deleteDistribution import delete_category
 from app.requests.delete.deletePost import delete_post
 from app.requests.user.get_alive import get_alive
 from app.requests.user.make_admin import make_admin
@@ -165,14 +165,18 @@ async def catalogue_callback_admin(callback: CallbackQuery):
 
 @router.callback_query(F.data == "distributions")
 async def get_distributions_catalogue(callback: CallbackQuery):
-    pass
+    await callback.answer()
+    await callback.message.answer("Отлично, вот ваши распределения!", reply_markup = await inline_keyboards.get_distributions_catalogue(telegram_id=callback.from_user.id))
+
 
 
 @router.callback_query(F.data == "datasets")
 async def get_datasets_catalogue(callback: CallbackQuery):
-    pass
+    await callback.answer()
+    await callback.message.answer("Отлично, вот ваши датасеты!", reply_markup = await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
 
-@router.callback_query(F.data.startswith("category_"))
+
+@router.callback_query(F.data.startswith("distribution_"))
 async def category_catalogue_callback_admin(callback: CallbackQuery):
     await callback.answer()
     category_id = callback.data.split("_")[1]
@@ -202,7 +206,7 @@ async def category_catalogue_callback_admin(callback: CallbackQuery):
 #===========================================================================================================================
 # Создание сета
 #===========================================================================================================================
-
+"""
 
 @router.callback_query(F.data == "create_category")
 async def category_create_callback_admin(callback: CallbackQuery, state: FSMContext):
@@ -341,7 +345,7 @@ async def reject_acess_admin(callback: CallbackQuery, state: FSMContext, bot:Bot
         logging.error(e)
     finally:
         await state.clear()
-
+"""
 #===========================================================================================================================
 # Заглушка
 #===========================================================================================================================

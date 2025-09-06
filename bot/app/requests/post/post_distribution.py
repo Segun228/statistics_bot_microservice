@@ -1,25 +1,30 @@
 import aiohttp
 import asyncio
 import os
+import json
 import logging
 from dotenv import load_dotenv
 from pprint import pprint
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+DISTRIBUTION_CHOICES = (
+    "normal",
+    "binomial",
+    "poisson",
+    "uniform",
+    "exponential",
+    "beta",
+    "gamma",
+    "lognormal",
+    "chi2",
+    "t",
+    "f",
+    "geometric",
+    "hypergeom",
+    "negative_binomial",
+)
 
-async def post_post( 
-        telegram_id, 
-        category_id, 
-        name,
-        users,
-        customers,
-        AVP,
-        APC,
-        TMS,
-        COGS,
-        COGS1s,
-        FC
-    ):
+async def post_distribution(telegram_id, name, distribution_type, distribution_parameters):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -34,20 +39,21 @@ async def post_post(
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/sets/{category_id}/units/" 
+        exact_url = f"{base_url}api/distributions/" 
         logging.debug(f"Sending to {exact_url}")
+        if isinstance(distribution_parameters, (dict, )):
+            distribution_parameters = json.dumps(distribution_parameters)
+        if distribution_type not in DISTRIBUTION_CHOICES:
+            distribution_type = DISTRIBUTION_CHOICES[0]
+            distribution_parameters = json.dumps({
+                "mu":0,
+                "sigma":1
+            })
         data = {
-            "users": users,
-            "customers":customers,
-            "AVP":AVP,
-            "APC":APC,
-            "TMS":TMS,
-            "COGS":COGS,
-            "COGS1s":COGS1s,
-            "FC":FC,
-            "name":name,
+            "name": name,
+            "distribution_type":distribution_type,
+            "distribution_parameters":distribution_parameters
         }
-        print(data)
         async with session.post(
             exact_url, 
             headers=headers,
@@ -62,19 +68,7 @@ async def post_post(
 
 async def main():
     try:
-        response_data = await post_post( 
-            telegram_id = 777, 
-            category_id=1,
-            name= "new",
-            users = 1000,
-            customers = 10,
-            AVP = 100,
-            APC = 1,
-            TMS = 100,
-            COGS = 100,
-            COGS1s = 100,
-            FC =200
-        )
+        response_data = await post_distribution(telegram_id=6911237041, name="Тест через прогу", distribution_type="normal", distribution_parameters={"mu":0, "sigma":1})
         pprint(response_data)
     except ValueError:
         print("Пожалуйста, введите корректный числовой ID.")

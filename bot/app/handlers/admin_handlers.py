@@ -31,11 +31,11 @@ from app.requests.get.get_post import get_post
 
 from app.requests.helpers.get_cat_error import get_cat_error_async
 
-from app.requests.post.postCategory import post_set
+from bot.app.requests.post.post_dataset import post_set
 from app.requests.post.postPost import post_post
-from app.requests.put.putCategory import put_set
+from bot.app.requests.put.put_distribution import put_set
 from app.requests.put.putPost import put_post
-from app.requests.delete.deleteCategory import delete_category
+from bot.app.requests.delete.deleteDistribution import delete_category
 from app.requests.delete.deletePost import delete_post
 from app.requests.user.get_alive import get_alive
 from app.requests.user.make_admin import make_admin

@@ -4,7 +4,6 @@ from .models import Distribution, Dataset
 
 class DistributionSerializer(serializers.ModelSerializer):
     distribution_parameters = serializers.JSONField()
-    distribution_type_display = serializers.SerializerMethodField()
     class Meta:
         model = Distribution
         fields = [
@@ -13,7 +12,6 @@ class DistributionSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'distribution_type',
-            'distribution_type_display',
             'distribution_parameters',
             'created_at',
             'updated_at'

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from pprint import pprint
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-async def get_post(telegram_id, post_id, category_id):
+async def delete_distribution(telegram_id, distribution_id):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -21,24 +21,22 @@ async def get_post(telegram_id, post_id, category_id):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/sets/{category_id}/units/{post_id}/" 
+        exact_url = f"{base_url}api/distributions/{distribution_id}/" 
         logging.debug(f"Sending to {exact_url}")
-        
-        async with session.get(
+        async with session.delete(
             exact_url, 
-            headers=headers
+            headers=headers,
         ) as response:
-            if response.status in (200, 201, 202, 203):
-                logging.info("категории получены")
-                return await response.json()
+            if response.status in (200, 201, 202, 203, 204):
+                logging.info("распределение удалено")
+                return True
             else:
                 return None
 
 
 async def main():
     try:
-        tg_id = int(input("Введите ID пользователя: "))
-        response_data = await get_post(tg_id, category_id=1, post_id=1)
+        response_data = await delete_distribution(telegram_id=6911237041, distribution_id=4)
         pprint(response_data)
     except ValueError:
         print("Пожалуйста, введите корректный числовой ID.")

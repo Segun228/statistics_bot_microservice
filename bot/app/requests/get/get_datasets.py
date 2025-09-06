@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from pprint import pprint
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-async def get_sets(telegram_id):
+async def get_datasets(telegram_id):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -21,7 +21,7 @@ async def get_sets(telegram_id):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/sets/" 
+        exact_url = f"{base_url}api/datasets/" 
         logging.debug(f"Sending to {exact_url}")
         
         async with session.get(
@@ -29,13 +29,13 @@ async def get_sets(telegram_id):
             headers=headers
         ) as response:
             if response.status in (200, 201, 202, 203):
-                logging.info("категории получены")
+                logging.info("датасеты получены")
                 return await response.json()
             else:
                 return None
 
 
-async def retrieve_set(telegram_id, set_id):
+async def retrieve_dataset(telegram_id, dataset_id):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -50,7 +50,7 @@ async def retrieve_set(telegram_id, set_id):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/sets/{set_id}/" 
+        exact_url = f"{base_url}api/datasets/{dataset_id}/" 
         logging.debug(f"Sending to {exact_url}")
         
         async with session.get(
@@ -58,7 +58,7 @@ async def retrieve_set(telegram_id, set_id):
             headers=headers
         ) as response:
             if response.status in (200, 201, 202, 203):
-                logging.info("категория получена")
+                logging.info("датасет получен")
                 return await response.json()
             else:
                 return None
@@ -66,7 +66,7 @@ async def retrieve_set(telegram_id, set_id):
 async def main():
     try:
         delete_id = int(input("Введите ID пользователя: "))
-        response_data = await get_sets(telegram_id=delete_id)
+        response_data = await get_datasets(telegram_id=delete_id)
         pprint(response_data)
     except ValueError:
         print("Пожалуйста, введите корректный числовой ID.")
