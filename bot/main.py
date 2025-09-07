@@ -5,11 +5,14 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 from dotenv import load_dotenv
 
-from app.handlers.router import admin_router, user_router
+from app.handlers.router import admin_router, user_router, distribution_router, dataset_router
 from app.middlewares.antiflud import ThrottlingMiddleware
 
 from app.handlers import admin_handlers
 from app.handlers import user_handlers
+from app.handlers import distribution_handlers
+from app.handlers import dataset_handlers
+
 
 from app.filters.IsAdmin import IsAdmin
 
@@ -29,6 +32,8 @@ dp = Dispatcher()
 dp.message.middleware(ThrottlingMiddleware(limit=0.5))
 dp.include_router(admin_router)
 dp.include_router(user_router)
+dp.include_router(distribution_router)
+dp.include_router(dataset_router)
 
 async def main():
     logging.info("Starting bot with long polling...")

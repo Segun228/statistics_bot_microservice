@@ -102,6 +102,11 @@ async def give_acess(user_id):
 
 async def get_distribution_single_menu(distribution_id, telegram_id, distribution):
     keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="График", callback_data=f"get_plot_{distribution_id}"))
+    keyboard.add(InlineKeyboardButton(text="Вероятность", callback_data=f"get_probability_{distribution_id}"))
+    keyboard.add(InlineKeyboardButton(text="Интервал", callback_data=f"get_interval_{distribution_id}"))
+    keyboard.add(InlineKeyboardButton(text="Квантиль", callback_data=f"edit_quantile_{distribution_id}"))
+    keyboard.add(InlineKeyboardButton(text="Персентиль", callback_data=f"edit_percentile_{distribution_id}"))
     keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_distribution_{distribution_id}"))
     keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_distribution_{distribution_id}"))
     return keyboard.adjust(1).as_markup()
