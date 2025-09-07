@@ -56,8 +56,11 @@ async def post_distribution(telegram_id, name, distribution_type, distribution_p
         }
         async with session.post(
             exact_url, 
-            headers=headers,
-            data = data
+            headers={
+                "Authorization": f"Bot {telegram_id}",
+                "Content-Type": "application/json"
+            },
+            json=data
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("категории получены")

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "redis_cache",
     "signals",
+    "distributions",
     "regression"
 ]
 

@@ -56,8 +56,11 @@ async def put_distribution(telegram_id, distribution_id, name, distribution_type
         }
         async with session.put(
             exact_url, 
-            headers=headers,
-            data = data
+            headers={
+                "Authorization": f"Bot {telegram_id}",
+                "Content-Type": "application/json"
+            },
+            json=data
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("распределение обновлено")

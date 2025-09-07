@@ -30,6 +30,8 @@ ensure_topic_exists()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 dp.message.middleware(ThrottlingMiddleware(limit=0.5))
+
+
 dp.include_router(admin_router)
 dp.include_router(user_router)
 dp.include_router(distribution_router)

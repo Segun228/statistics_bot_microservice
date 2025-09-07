@@ -49,10 +49,43 @@ from app.requests.put.put_distribution import put_distribution
 from app.requests.delete.delete_dataset import delete_dataset
 from app.requests.delete.deleteDistribution import delete_distribution
 
+from app.requests.distribution.get_plot import get_plot
 
 @router.callback_query(F.data.startswith("get_plot_"))
-async def get_plot_start(callback: CallbackQuery, state: FSMContext):
-    pass
+async def get_plot_start(callback: CallbackQuery, state: FSMContext, bot:Bot):
+    try:
+        id = int(callback.data.split("_")[2])
+        await state.clear()
+        zip_buf = await get_plot(
+            telegram_id= callback.from_user.id,
+            id = id,
+        )
+        if not zip_buf:
+            raise Exception("Error while getting report from the server")
+        zip_buf = io.BytesIO(zip_buf)
+        with zipfile.ZipFile(zip_buf, 'r') as zip_ref:
+            for filename in zip_ref.namelist():
+                if filename.endswith(('.png', '.img', '.jpg', '.jpeg')): 
+                    file_bytes = zip_ref.read(filename)
+                    file_buf = io.BytesIO(file_bytes)
+                    file_buf.seek(0)
+
+                    document = BufferedInputFile(file_buf.read(), filename=filename)
+                    await bot.send_document(chat_id=callback.from_user.id, document=document)
+        await callback.message.answer("Ваше распределение готово!", reply_markup= inline_keyboards.main)
+
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        raise
+    finally:
+        await state.clear()
+    build_log_message(
+        telegram_id=callback.from_user.id,
+        action="callback",
+        source="inline",
+        payload="visualize_set"
+    )
 
 @router.callback_query(F.data.startswith("get_probability_"))
 async def get_probability_start(callback: CallbackQuery, state: FSMContext):

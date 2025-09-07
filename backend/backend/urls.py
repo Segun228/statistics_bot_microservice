@@ -9,7 +9,8 @@ from users.urls import urlpatterns as auth_urls
 from api.urls import urlpatterns as api_urls
 from analytics.urls import urlpatterns as analitics_urls
 from redis_cache.urls import urlpatterns as redis_urls
-
+from distributions.urls import urlpatterns as dist_urls
+from datasets.urls import urlpatterns as datasets_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -20,4 +21,6 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path("cache/", include(redis_urls), name="redis-endpoint-group"),
+    path("distributions/", include(dist_urls), name="distributions-endpoint-group"),
+    path("datasets/", include(datasets_urls), name="datasets-endpoint-group"),
 ]
