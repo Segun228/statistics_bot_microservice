@@ -4,9 +4,9 @@ from . import views
 
 urlpatterns = [
     path("plot/<int:id>/", views.PlotView.as_view(), name="plot-endpoint"),
-    path("probability/<int:id>/", views.PlotView.as_view(), name="probability-endpoint"),
-    path("interval/<int:id>/", views.PlotView.as_view(), name="interval-endpoint"),
-    path("quantile/<int:id>/", views.PlotView.as_view(), name="quantile-endpoint"),
-    path("percentile/<int:id>/", views.PlotView.as_view(), name="percentile-endpoint"),
+    path("probability/<int:id>/", views.ProbabilityView.as_view(), name="probability-endpoint"),
+    path("interval/<int:id>/", views.IntervalView.as_view(), name="interval-endpoint"),
+    path("quantile/<int:id>/", views.QuantileView.as_view(), name="quantile-endpoint"),
+    path("percentile/<int:id>/", views.PercentileView.as_view(), name="percentile-endpoint"),
     path("sample/<int:id>/", views.SampleView.as_view(), name="sample-endpoint")
 ]

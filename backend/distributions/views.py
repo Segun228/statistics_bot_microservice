@@ -98,7 +98,7 @@ class PlotView(AuthenticatedAPIView, APIView):
 class ProbabilityView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
         distribution_id = kwargs.get("id")
-        a = request.data.get("value")
+        a = request.data.get("a")
         if CACHE:
             cached = cache.get(key=f"distribution_{distribution_id}_probability_{request.user.id}")
             if cached:
@@ -222,7 +222,7 @@ class QuantileView(AuthenticatedAPIView, APIView):
 class PercentileView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
         distribution_id = kwargs.get("id")
-        percentile = request.data.get("percentile")
+        percentile = float(request.data.get("percentile"))
         if CACHE:
             cached = cache.get(key=f"distribution_{distribution_id}_quantile_{request.user.id}")
             if cached:
@@ -263,7 +263,7 @@ class PercentileView(AuthenticatedAPIView, APIView):
 class SampleView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
         distribution_id = kwargs.get("id")
-        n = request.data.get("n")
+        n = int(request.data.get("n"))
         if CACHE:
             cached = cache.get(key=f"distribution_{distribution_id}_quantile_{request.user.id}")
             if cached:

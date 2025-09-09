@@ -184,6 +184,7 @@ def plot_distribution(distribution):
 
 def get_probability(distribution, a):
     try:
+        a = float(a)
         dist_name = distribution.get("name")
         dist_params = distribution.get("distribution_parameters")
         dist_type = distribution.get("distribution_type")
@@ -216,11 +217,14 @@ def get_probability(distribution, a):
                 x = np.arange(lower, upper)
 
                 pmf_values = dist.pmf(x)
-                cdf_values = dist.cdf(x)
+
                 plt.xlim((lower, upper))
                 plt.bar(x, pmf_values, color='blue', alpha=0.6, label="PMF")
-                plt.bar(x[x<=a], pmf_values[x<=a], color='orange', alpha=0.8, label=f"P(X≤{a})")
-                plt.plot(x, cdf_values, 'r-o', label="CDF")
+
+                a_int = int(np.floor(a))
+                mask = x <= a_int
+                plt.bar(x[mask], pmf_values[mask], color='orange', alpha=0.8, label=f"P(X≤{a_int})")
+                plt.axvline(x=a, color='red', linestyle='--', linewidth=2, label=f'a = {a}')
             else:
                 x = np.linspace(dist.ppf(0.001), dist.ppf(0.999), 1000)
                 pdf_values = dist.pdf(x)
@@ -228,8 +232,8 @@ def get_probability(distribution, a):
                 plt.fill_between(x, 0, pdf_values, where=(x<=a), color='orange', alpha=0.5, label=f"P(X≤{a})")
                 plt.plot(x, pdf_values, label="PDF")
                 plt.plot(x, cdf_values, label="CDF")
-            plt.axvline(x=a, color='red', linestyle='--', linewidth=2, label='a value')
-            plt.axhline(y=dist.cdf(a), color='red', linestyle='--', linewidth=2, label=f"P(x<={a}) = {dist.cdf(a)}")
+                plt.axvline(x=a, color='red', linestyle='--', linewidth=2, label='a value')
+                plt.axhline(y=dist.cdf(a), color='red', linestyle='--', linewidth=2, label=f"P(x<={a}) = {dist.cdf(a)}")
 
             plt.title(f"P(x<={a}) = {dist.cdf(a)}")
             plt.legend()
@@ -255,6 +259,7 @@ def get_probability(distribution, a):
 
 def get_interval(distribution, a, b):
     try:
+        a, b = float(a), float(b)
         dist_name = distribution.get("name")
         dist_params = distribution.get("distribution_parameters")
         dist_type = distribution.get("distribution_type")
@@ -275,17 +280,24 @@ def get_interval(distribution, a, b):
             plt.figure(figsize=(8, 6))
 
             if dist_type in discrete_distributions:
-                lower = int(dist.ppf(0.001))
-                upper = int(dist.ppf(0.999)) + 1
+                a = int(np.floor(a))
+                b = int(np.floor(b))
+
+                lower = min(int(dist.ppf(0.001)), a)
+                upper = max(int(dist.ppf(0.999)) + 1, b + 1)
                 x = np.arange(lower, upper)
+
                 pmf_values = dist.pmf(x)
+
                 plt.bar(x, pmf_values, color='blue', alpha=0.6, label="PMF")
-                
+
+
                 mask = (x >= a) & (x <= b)
                 plt.bar(x[mask], pmf_values[mask], color='orange', alpha=0.8, label=f"P({a}≤X≤{b})")
-                
-                p_interval = dist.cdf(b) - dist.cdf(a-1)
+                p_interval = dist.cdf(b) - dist.cdf(a - 1)
                 plt.title(f"P({a}≤X≤{b}) = {p_interval:.4f}")
+                plt.xlim(lower, upper)
+                plt.legend()
 
             else:
                 x = np.linspace(dist.ppf(0.001), dist.ppf(0.999), 1000)
@@ -326,6 +338,7 @@ def get_interval(distribution, a, b):
 
 def get_quantile(distribution, quantile):
     try:
+        quantile = float(quantile)
         dist_name = distribution.get("name")
         dist_params = distribution.get("distribution_parameters")
         dist_type = distribution.get("distribution_type")
@@ -356,7 +369,10 @@ def get_quantile(distribution, quantile):
 
                 plt.bar(x, pmf_values, color="#6baed6", alpha=0.6, label="PMF")
                 plt.bar(x[x<=a], pmf_values[x<=a], color="#fd8d3c", alpha=0.8, label=f"P(X≤{a:.2f})")
-                plt.plot(x, cdf_values, 'r-o', label="CDF", markersize=4)
+                plt.axvline(x=a, color='black', linestyle='--', linewidth=1.5)
+                plt.axhline(y=dist.ppf(a), color='black', linestyle='--', linewidth=1.5)
+                plt.annotate(f'{a:.2f}', xy=(a, 0), xytext=(a, max(pmf_values)*0.05),
+                            arrowprops=dict(arrowstyle='->', color='black'), ha='center')
 
             else:
                 x = np.linspace(dist.ppf(0.001), dist.ppf(0.999), 1000)
@@ -365,12 +381,13 @@ def get_quantile(distribution, quantile):
 
                 plt.plot(x, pdf_values, color="#6baed6", label="PDF", linewidth=2)
                 plt.plot(x, cdf_values, color="#fd8d3c", label="CDF", linewidth=2)
-                plt.fill_between(x, 0, pdf_values, where=(x <= a), color="#fd8d3c", alpha=0.3, label=f"P(X≤{a:.2f})")
+                plt.fill_between(x, 0, pdf_values, where=(x <= a), color="#fd8d3c", alpha=0.5, label=f"P(X≤{a:.2f})")
 
 
-            plt.axvline(x=a, color='black', linestyle='--', linewidth=1.5)
-            plt.annotate(f'{a:.2f}', xy=(a, 0), xytext=(a, max(pdf_values)*0.05),
-                         arrowprops=dict(arrowstyle='->', color='black'), ha='center')
+                plt.axvline(x=a, color='black', linestyle='--', linewidth=1.5)
+                plt.axhline(y=dist.ppf(a), color='black', linestyle='--', linewidth=1.5)
+                plt.annotate(f'{a:.2f}', xy=(a, 0), xytext=(a, max(pdf_values)*0.05),
+                            arrowprops=dict(arrowstyle='->', color='black'), ha='center')
 
             plt.title(f"{dist_name} distribution: quantile {quantile*100:.1f}% = {a:.2f}", fontsize=14)
             plt.xlabel("X")
@@ -397,6 +414,7 @@ def get_quantile(distribution, quantile):
 
 def get_sample(distribution, n):
     try:
+        n = int(n)
         dist_name = distribution.get("name")
         dist_params = distribution.get("distribution_parameters")
         dist_type = distribution.get("distribution_type")
@@ -414,7 +432,6 @@ def get_sample(distribution, n):
 
         sample = dist.rvs(size=n)
 
-
         df = pd.DataFrame({
             "sample": sample
         })
@@ -430,7 +447,7 @@ def get_sample(distribution, n):
         )
         response['Content-Disposition'] = f'attachment; filename="{dist_name}_sample.xlsx"'
 
-        return response, excel_buffer.read()
+        return response, excel_buffer
 
     except Exception as e:
         logging.exception(f"Ошибка в get_sample_excel: {e}")

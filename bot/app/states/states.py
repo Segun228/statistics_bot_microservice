@@ -1,5 +1,8 @@
 from aiogram.fsm.state import StatesGroup, State
 
+class Send(StatesGroup):
+    handle = State()
+    message = State()
 
 class Distribution(StatesGroup):
     handle_distribution = State()
@@ -35,10 +38,24 @@ class DatasetEdit(StatesGroup):
     file = State()
 
 
-class Send(StatesGroup):
-    handle = State()
-    message = State()
+class Probability(StatesGroup):
+    probability = State()
 
+
+class Interval(StatesGroup):
+    interval = State()
+
+
+class Sample(StatesGroup):
+    sample = State()
+
+
+class Quantile(StatesGroup):
+    quantile = State()
+
+
+class Percentile(StatesGroup):
+    percentile = State()
 
 class File(StatesGroup):
     waiting_for_file = State()
