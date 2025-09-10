@@ -11,7 +11,7 @@ from analytics.urls import urlpatterns as analitics_urls
 from redis_cache.urls import urlpatterns as redis_urls
 from distributions.urls import urlpatterns as dist_urls
 from datasets.urls import urlpatterns as datasets_urls
-
+from ab_tests.urls import urlpatterns as ab_tests_urls
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(api_urls), name="api-endpoint-group"),
@@ -23,4 +23,5 @@ urlpatterns = [
     path("cache/", include(redis_urls), name="redis-endpoint-group"),
     path("distributions/", include(dist_urls), name="distributions-endpoint-group"),
     path("datasets/", include(datasets_urls), name="datasets-endpoint-group"),
+    path("ab-tests/", include(ab_tests_urls), name="ab-tests-endpoint-group"),
 ]
