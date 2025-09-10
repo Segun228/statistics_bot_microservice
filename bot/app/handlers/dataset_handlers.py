@@ -16,7 +16,9 @@ import asyncio
 
 from aiogram.types import InputFile
 
-from app.keyboards import inline_user as inline_keyboards
+from app.keyboards import inline_user as inline_user_keyboards
+
+from app.keyboards import inline_dataset as inline_keyboards
 
 from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit
 
@@ -48,6 +50,45 @@ from app.requests.put.put_distribution import put_distribution
 
 from app.requests.delete.delete_dataset import delete_dataset
 from app.requests.delete.deleteDistribution import delete_distribution
+
+
+#===========================================================================================================================
+# Меню
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("ab_tests"))
+async def get_datasets_ab_test_menu(callback: CallbackQuery):
+    try:
+        dataset_id = int(callback.data.split("_")[2])
+        await callback.message.answer("Выберите необходимый инструмент", reply_markup=await inline_keyboards.get_dataset_ab_menu(dataset_id=dataset_id))
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+@router.callback_query(F.data.startswith("ml_algorithms"))
+async def get_datasets_ml_algo_menu(callback: CallbackQuery):
+    try:
+        dataset_id = int(callback.data.split("_")[2])
+        await callback.message.answer("Выберите необходимый алгоритм", reply_markup=await inline_keyboards.get_dataset_ml_menu(dataset_id=dataset_id))
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+@router.callback_query(F.data.startswith("get_criteria_"))
+async def get_datasets_ab_criteria_menu(callback: CallbackQuery):
+    try:
+        dataset_id = int(callback.data.split("_")[2])
+        await callback.message.answer("Выберите необходимый алгоритм", reply_markup=await inline_keyboards.get_dataset_criteria_menu(dataset_id=dataset_id))
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
 
 #===========================================================================================================================
 # Заглушка

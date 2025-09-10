@@ -113,8 +113,28 @@ async def get_distribution_single_menu(distribution_id, telegram_id, distributio
     return keyboard.adjust(1).as_markup()
 
 
-async def get_dataset_single_menu(dataset_id, telegram_id, dataset):
+async def get_dataset_single_menu(dataset_id):
     keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="АБ тесты", callback_data=f"ab_tests_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="ML-алгоритмы", callback_data=f"ml_algorithms_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_dataset_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_dataset_{dataset_id}"))
+    return keyboard.adjust(1).as_markup()
+
+
+async def get_dataset_ab_menu(dataset_id):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="АБ тесты", callback_data=f"ab_tests_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="ML-алгоритмы", callback_data=f"ml_algorithms_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_dataset_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_dataset_{dataset_id}"))
+    return keyboard.adjust(1).as_markup()
+
+
+async def get_dataset_ml_menu(dataset_id):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="АБ тесты", callback_data=f"ab_tests_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="ML-алгоритмы", callback_data=f"ml_algorithms_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Редактировать", callback_data=f"edit_dataset_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Удалить", callback_data=f"delete_dataset_{dataset_id}"))
     return keyboard.adjust(1).as_markup()

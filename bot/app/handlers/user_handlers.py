@@ -222,7 +222,7 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery):
         f"*Name:* {data['name']}\n"
         f"*Columns:* {param_string}"
     )
-    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id, telegram_id = callback.from_user.id, dataset = current_dataset))
+    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
 
 
 #===========================================================================================================================
