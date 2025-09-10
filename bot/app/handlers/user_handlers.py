@@ -169,64 +169,74 @@ async def get_datasets_inline_catalogue(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("distribution_"))
 async def distribution_catalogue_callback_admin(callback: CallbackQuery):
-    await callback.answer()
-    distribution_id = callback.data.split("_")[1]
-    build_log_message(
-        telegram_id=callback.from_user.id,
-        action="callback",
-        source="menu",
-        payload=f"distribution_{distribution_id}"
-    )
-    current_distribution = await retrieve_distribution(telegram_id=callback.from_user.id, distribution_id=distribution_id)
-    if current_distribution is None:
-        await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+    try:
         await callback.answer()
-        return
-    data = current_distribution
+        distribution_id = callback.data.split("_")[1]
+        build_log_message(
+            telegram_id=callback.from_user.id,
+            action="callback",
+            source="menu",
+            payload=f"distribution_{distribution_id}"
+        )
+        current_distribution = await retrieve_distribution(telegram_id=callback.from_user.id, distribution_id=distribution_id)
+        if current_distribution is None:
+            await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+            await callback.answer()
+            return
+        data = current_distribution
 
-    params = json.loads(data['distribution_parameters'].replace("'", '"'))
-    param_string = "\n"
-    for key, value in params.items():
-        param_string += f" \- *{key.replace(".", "\.")}* \= {value.replace(".", "\.")}\n"
-    param_string += "\n\n"
-    msg = (
-        f"*Name:* {data['name']}\n"
-        f"*Type:* {data['distribution_type']}\n"
-        f"*Parameters:* {param_string}"
-    )
-    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_distribution_single_menu(distribution_id = distribution_id, telegram_id = callback.from_user.id, distribution = current_distribution))
+        params = json.loads(data['distribution_parameters'].replace("'", '"'))
+        param_string = "\n"
+        for key, value in params.items():
+            param_string += f" \- *{key.replace(".", "\.")}* \= {value.replace(".", "\.")}\n"
+        param_string += "\n\n"
+        msg = (
+            f"*Name:* {data['name']}\n"
+            f"*Type:* {data['distribution_type']}\n"
+            f"*Parameters:* {param_string}"
+        )
+        await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_distribution_single_menu(distribution_id = distribution_id, telegram_id = callback.from_user.id, distribution = current_distribution))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, не удалось загрузить распределение", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
 
 
 
 @router.callback_query(F.data.startswith("dataset_"))
 async def dataset_catalogue_callback_admin(callback: CallbackQuery):
-    await callback.answer()
-    dataset_id = callback.data.split("_")[1]
-    build_log_message(
-        telegram_id=callback.from_user.id,
-        action="callback",
-        source="menu",
-        payload=f"dataset_{dataset_id}"
-    )
-    current_dataset = await retrieve_dataset(telegram_id=callback.from_user.id, dataset_id=dataset_id)
-    if current_dataset is None:
-        await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+    try:
         await callback.answer()
-        return
-    data = current_dataset
-    params = data['columns']
-    param_string = "\n"
-    for nam in params:
-        param_string += f"*{nam}*\n"
-    param_string += "\n"
-    msg = (
-        f"*Name:* {data['name']}\n"
-        f"*Columns:* {param_string}"
-        f"*alpha:* {str(data['alpha']).replace(".", "\.")}\n"
-        f"*beta:* {str(data['beta']).replace(".", "\.")}"
-    )
-    await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
-
+        dataset_id = callback.data.split("_")[1]
+        build_log_message(
+            telegram_id=callback.from_user.id,
+            action="callback",
+            source="menu",
+            payload=f"dataset_{dataset_id}"
+        )
+        current_dataset = await retrieve_dataset(telegram_id=callback.from_user.id, dataset_id=dataset_id)
+        if current_dataset is None:
+            await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+            await callback.answer()
+            return
+        data = current_dataset
+        params = data['columns']
+        param_string = "\n"
+        for nam in params:
+            param_string += f"*{nam}*\n"
+        param_string += "\n"
+        msg = (
+            f"*Name:* {data['name']}\n\n"
+            f"*Columns:* {param_string}"
+            f"*Alpha:* {str(data['alpha']).replace(".", "\.")}\n"
+            f"*Beta:* {str(data['beta']).replace(".", "\.")}\n\n"
+            f"*Test group:* {str(data['test']).replace(".", "\.") or "Not set yet"}\n"
+            f"*Controle group:* {str(data['control']).replace(".", "\.") or "Not set yet"}\n\n"
+            f"*Final length:* {str(data['length']).replace(".", "\.") or "Not set yet"}\n"
+        )
+        await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, не удалось загрузить датасет", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
 
 #===========================================================================================================================
 # Создание распределения

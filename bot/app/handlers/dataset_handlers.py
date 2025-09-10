@@ -20,7 +20,7 @@ from app.keyboards import inline_user as inline_user_keyboards
 
 from app.keyboards import inline_dataset as inline_keyboards
 
-from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors
+from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors, Groups
 
 from aiogram.types import BufferedInputFile
 
@@ -52,6 +52,9 @@ from app.requests.delete.delete_dataset import delete_dataset
 from app.requests.delete.deleteDistribution import delete_distribution
 
 from app.requests.dataset.patch_errors.patch_errors import patch_errors
+from app.requests.dataset.patch_categories.patch_groups import set_groups
+
+from app.keyboards.reply_dataset import create_reply_column_keyboard_group
 #===========================================================================================================================
 # Меню
 #===========================================================================================================================
@@ -136,6 +139,86 @@ async def beta_errors(message:Message, state:FSMContext):
         logging.error("An error occured")
         logging.exception(e)
         await message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+#===========================================================================================================================
+# Установка теста и контроля
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("set_groups"))
+async def set_groups_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        dataset_id = callback.data.split("_")[2]
+        await state.set_state(Groups.handle)
+        await state.update_data(id = dataset_id)
+        dataset = await retrieve_dataset(
+            telegram_id=callback.from_user.id,
+            dataset_id=int(dataset_id)
+        )
+        if dataset is None:
+            raise ValueError("Error while getting dataset info from the server")
+        await state.update_data(
+            columns = dataset.get("columns")
+        )
+        await callback.message.answer("Выберите тестовую группу", reply_markup=create_reply_column_keyboard_group(columns=dataset.get("columns")))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, не удалось установить группы, попробуйте позже")
+
+
+@router.message(Groups.handle)
+async def set_control_group(message:Message, state:FSMContext):
+    try:
+        test_group = message.text.strip()
+        await state.set_state(Groups.controle)
+        await state.update_data(test = test_group)
+        data = await state.get_data()
+        columns = data.get("columns")
+        await message.answer("Выберите контрольную группу", reply_markup=create_reply_column_keyboard_group(columns=columns))
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Извините, не удалось установить группы, попробуйте позже")
+
+
+@router.message(Groups.controle)
+async def set_end_group(message:Message, state:FSMContext):
+    try:
+        controle_group = message.text.strip()
+        data = await state.get_data()
+        test = data.get("test")
+        dataset_id = data.get("id")
+        answer = await set_groups(
+            telegram_id = message.from_user.id,
+            dataset_id = dataset_id,
+            test = test,
+            control = controle_group
+        )
+        if answer:
+            await message.answer("Группы успешно выбраны!", reply_markup=await inline_keyboards.get_dataset_ab_menu(dataset_id=dataset_id))
+            current_dataset = await retrieve_dataset(telegram_id=message.from_user.id, dataset_id=dataset_id)
+            if current_dataset is None:
+                await message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=message.from_user.id))
+                return
+            data = current_dataset
+            params = data['columns']
+            param_string = "\n"
+            for nam in params:
+                param_string += f"*{nam}*\n"
+            param_string += "\n"
+            msg = (
+                f"*Name:* {data['name']}\n\n"
+                f"*Columns:* {param_string}"
+                f"*Alpha:* {str(data['alpha']).replace(".", "\.")}\n"
+                f"*Beta:* {str(data['beta']).replace(".", "\.")}\n\n"
+                f"*Test group:* {str(data['test']).replace(".", "\.") or "Not set yet"}\n"
+                f"*Controle group:* {str(data['control']).replace(".", "\.") or "Not set yet"}\n\n"
+                f"*Final length:* {str(data['length']).replace(".", "\.") or "Not set yet"}\n"
+            )
+            await message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
+        
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Извините, не удалось установить группы, попробуйте позже")
 
 #===========================================================================================================================
 # Заглушка

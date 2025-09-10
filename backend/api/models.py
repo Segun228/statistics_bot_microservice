@@ -46,6 +46,8 @@ class Dataset(models.Model):
 
     test = models.CharField(default="",max_length=100)
     control = models.CharField(default="",max_length=100)
+
+    length = models.IntegerField(default=0)
     class Meta:
         verbose_name = 'модель юнит-экономики'
         verbose_name_plural = 'модели юнит-экономики'

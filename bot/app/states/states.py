@@ -67,3 +67,9 @@ class Errors(StatesGroup):
     handle_errors = State()
     alpha = State()
 
+
+class Groups(StatesGroup):
+    handle = State()
+    test = State()
+    controle = State()
+

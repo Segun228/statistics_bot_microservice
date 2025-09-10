@@ -18,6 +18,7 @@ async def get_dataset_single_menu(dataset_id):
 
 async def get_dataset_ab_menu(dataset_id):
     keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Указать тестовую и контрольную группы", callback_data=f"set_groups_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Указать α и β", callback_data=f"set_errors_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Критерии", callback_data=f"get_criteria_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Рассчитать N", callback_data=f"count_n_{dataset_id}"))
