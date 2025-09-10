@@ -20,7 +20,7 @@ from app.keyboards import inline_user as inline_user_keyboards
 
 from app.keyboards import inline_dataset as inline_keyboards
 
-from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit
+from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors
 
 from aiogram.types import BufferedInputFile
 
@@ -51,7 +51,7 @@ from app.requests.put.put_distribution import put_distribution
 from app.requests.delete.delete_dataset import delete_dataset
 from app.requests.delete.deleteDistribution import delete_distribution
 
-
+from app.requests.dataset.patch_errors.patch_errors import patch_errors
 #===========================================================================================================================
 # Меню
 #===========================================================================================================================
@@ -89,6 +89,53 @@ async def get_datasets_ab_criteria_menu(callback: CallbackQuery):
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
 
 
+
+#===========================================================================================================================
+# Установка альфа и бета
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("set_errors_"))
+async def set_errors(callback: CallbackQuery, state:FSMContext):
+    try:
+        dataset_id = int(callback.data.split("_")[2])
+        await callback.message.answer("Выберите ошибку первого рода")
+        await state.set_state(Errors.handle_errors)
+        await state.update_data(id = dataset_id)
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+@router.message(Errors.handle_errors)
+async def alpha_errors(message:Message, state:FSMContext):
+    try:
+        alpha = float(message.text.strip())
+        await state.update_data(alpha = alpha)
+        await message.answer("Выберите ошибку второго рода")
+        await state.set_state(Errors.alpha)
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+@router.message(Errors.alpha)
+async def beta_errors(message:Message, state:FSMContext):
+    try:
+        beta = float(message.text.strip())
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        alpha = data.get("alpha")
+        response = await patch_errors(dataset_id = dataset_id, alpha = alpha, beta = beta, telegram_id=message.from_user.id)
+        if response:
+            await message.answer("Данные успешно обновлены!",reply_markup=await inline_keyboards.get_dataset_ab_menu(dataset_id=dataset_id))
+        await state.set_state(Errors.alpha)
+        await state.clear()
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
 
 #===========================================================================================================================
 # Заглушка

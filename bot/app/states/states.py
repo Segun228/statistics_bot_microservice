@@ -62,3 +62,8 @@ class File(StatesGroup):
     waiting_for_name = State()
     waiting_for_replace_file = State()
 
+
+class Errors(StatesGroup):
+    handle_errors = State()
+    alpha = State()
+

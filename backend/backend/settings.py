@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     "redis_cache",
     "signals",
     "distributions",
-    "regression"
+    "ab_tests",
+    "ml_algorithms"
 ]
 
 MIDDLEWARE = [

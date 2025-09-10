@@ -26,6 +26,10 @@ class DatasetSerializer(serializers.ModelSerializer):
             "id",
             'columns',
             'url',
-            "name"
+            "name",
+            'alpha',
+            'beta',
+            'test',
+            'control',
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']

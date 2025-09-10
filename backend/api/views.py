@@ -184,12 +184,14 @@ class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIVi
         
 
         dataset = serializer.save(user=request.user, url=None, columns=None)
-
         try:
             buffer = BytesIO()
             for chunk in csv_file.chunks():
                 buffer.write(chunk)
             buffer.seek(0)
+
+            df = pd.read_csv(buffer)
+            df.dropna()
             response = requests.put(
                 url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
                 data=buffer.getvalue(),

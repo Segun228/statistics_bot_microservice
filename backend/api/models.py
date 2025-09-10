@@ -40,7 +40,12 @@ class Dataset(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
+    alpha = models.FloatField(null=False, blank=False, default=0.05)
+    beta = models.FloatField(null=False, blank=False, default=0.2)
+
+    test = models.CharField(default="",max_length=100)
+    control = models.CharField(default="",max_length=100)
     class Meta:
         verbose_name = 'модель юнит-экономики'
         verbose_name_plural = 'модели юнит-экономики'
