@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from pprint import pprint
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+load_dotenv()
+
 async def get_datasets(telegram_id):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
@@ -34,6 +36,43 @@ async def get_datasets(telegram_id):
             else:
                 return None
 
+async def get_dataset_file(telegram_id, url):
+    load_dotenv()
+    base_url = os.getenv("BASE_URL")
+
+    if not base_url:
+        logging.error("No base URL was provided")
+        raise ValueError("No base URL was provided")
+    if not telegram_id:
+        logging.error("No base telegram_id was provided")
+        raise ValueError("No telegram_id was provided")
+
+    CLOUD_API_KEY = os.getenv("CLOUD_API_KEY")
+
+    if not CLOUD_API_KEY:
+        logging.exception("Missing env required fields")
+        raise ValueError("Missing env required fields")
+    async with aiohttp.ClientSession() as session:
+        response = await session.get(
+                url=url,
+                headers={
+                    "Authorization": f"Bearer {CLOUD_API_KEY}",
+                    "Content-Type": "text/csv"
+                }
+            )
+        if response.status in (200, 201, 202, 203):
+            logging.info("файл датасета получены")
+            return await response.read()
+        else:
+            body = await response.text()
+            logging.error(
+                "Ошибка при загрузке датасета: статус=%s, причина=%s, тело ответа=%s",
+                response.status,
+                response.reason,
+                url,
+                body
+            )
+            return None
 
 async def retrieve_dataset(telegram_id, dataset_id):
     load_dotenv()

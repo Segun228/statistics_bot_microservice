@@ -37,7 +37,7 @@ from app.requests.user.make_admin import make_admin
 
 from app.kafka.utils import build_log_message
 
-from app.requests.get.get_datasets import get_datasets, retrieve_dataset
+from app.requests.get.get_datasets import get_datasets, retrieve_dataset, get_dataset_file
 from app.requests.get.get_distributions import get_distributions, retrieve_distribution
 
 from app.requests.post.post_dataset import post_dataset
@@ -203,7 +203,7 @@ async def distribution_catalogue_callback_admin(callback: CallbackQuery):
 
 
 @router.callback_query(F.data.startswith("dataset_"))
-async def dataset_catalogue_callback_admin(callback: CallbackQuery):
+async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
     try:
         await callback.answer()
         dataset_id = callback.data.split("_")[1]
@@ -218,6 +218,21 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery):
             await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
             await callback.answer()
             return
+        dataset_bytes = await get_dataset_file(
+            telegram_id=callback.from_user.id,
+            url=current_dataset.get("url")
+        )
+        if dataset_bytes:
+            file = BufferedInputFile(
+                file=dataset_bytes,
+                filename="dataset.csv"
+            )
+            await bot.send_document(
+                chat_id=callback.from_user.id,
+                document=file
+            )
+        else:
+            await callback.message.answer("Извините, не удалось загрузить датасет")
         data = current_dataset
         params = data['columns']
         param_string = "\n"
@@ -596,7 +611,7 @@ async def load_dataset(message: Message, state: FSMContext):
 
 
 @router.message(F.document, Dataset.file)
-async def get_dataset_file(message: Message, state: FSMContext, bot:Bot):
+async def get_dataset_file_message(message: Message, state: FSMContext, bot:Bot):
     try:
         data = await state.get_data()
         file_id = message.document.file_id
@@ -648,7 +663,7 @@ async def edit_load_dataset(message: Message, state: FSMContext):
 
 
 @router.message(F.document, DatasetEdit.file)
-async def get_dataset_file(message: Message, state: FSMContext, bot:Bot):
+async def get_dataset_file_msg(message: Message, state: FSMContext, bot:Bot):
     try:
         data = await state.get_data()
         dataset_id = data.get("id")

@@ -1,6 +1,5 @@
 import logging
 from rest_framework.views import exception_handler as drf_exception_handler
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import (
     APIException,
@@ -30,7 +29,6 @@ import logging
 
 from kafka_broker.utils import build_log_message
 
-from rest_framework.response import Response
 from rest_framework import mixins, generics
 
 from django.core.cache import cache
@@ -60,6 +58,7 @@ import seaborn as sns
 import scipy.stats as stats
 import sklearn as skl
 
+from .handlers import handlers
 load_dotenv()
 
 class AuthenticatedAPIView:
@@ -68,6 +67,28 @@ class AuthenticatedAPIView:
 
 
 logger = logging.getLogger(__name__)
+CACHE =os.getenv("CACHE")
+if not CACHE or CACHE.lower() in ("no", "false", "none", "na", "0", 0, -1):
+    CACHE = False
+else:
+    CACHE = True
+
+def download_dataset(dataset: Dataset)->BytesIO|None:
+    try:
+        url = dataset.url
+        if not url:
+            raise ValueError("No URL provided for the dataset.")
+        
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise ValueError(f"Failed to download. HTTP {response.status_code}")
+
+        return BytesIO(response.content)
+    
+    except Exception as e:
+        logging.exception("Dataset download failed.")
+        local_exception_handler(e)
+
 
 def local_exception_handler(e):
     if isinstance(e, ValidationError):
@@ -96,8 +117,13 @@ def local_exception_handler(e):
 
 class CountMDEView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
             dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"count_mde_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
             if dataset_id:
                 dataset_id = int(dataset_id)
             else:
@@ -121,8 +147,22 @@ class CountMDEView(AuthenticatedAPIView, APIView):
                 raise ValueError("Could not get appropriate test and control column names")
             if test_column not in columns or control_column not in columns:
                 raise ValueError("Could not get appropriate test and control column names")
-            
-            response = 
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.count_mde(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta
+            )
+            if CACHE:
+                cache.set(
+                    f"count_mde_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
 
         except Exception as e:
             local_exception_handler(e)
@@ -130,124 +170,592 @@ class CountMDEView(AuthenticatedAPIView, APIView):
 
 class SampleSizeView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"count_n_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+            mde = request.get("mde", 5)
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.count_n(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+                mde=mde,
+                k=1
+            )
+            if CACHE:
+                cache.set(
+                    f"count_n_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 
 
 class Z_TestView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"ztest_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.z_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"ztest_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
+
 
 
 class T_TestView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"ttest_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.t_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"ttest_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
-
-class Chi_TestView(AuthenticatedAPIView, APIView):
-    def post(self, request, *args, **kwargs):
-        try:
-            pass
-        except Exception as e:
-            local_exception_handler(e)
-        finally:
-            pass
 
 
 class Chi_2Sample_TestView(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"chi2_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.chi_2test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"chi2_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
-class KS_test_View(AuthenticatedAPIView, APIView):
+class Cramer_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"cramer_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.cramer_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"cramer_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class KS_2Sample_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"ks_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.ks_2test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"ks_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class U_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"utest_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.u_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"utest_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Lilleforce_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"lil_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.lilleforce_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"lil_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Shap_Wilke_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"shap_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.shapwilk_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"shap_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Welch_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"welch_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.welch_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"welch_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Anderson_Darling_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"anderson_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.anderson_darling_test(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"anderson_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Bootstrap_View(AuthenticatedAPIView, APIView):
@@ -272,19 +780,53 @@ class Cuped_View(AuthenticatedAPIView, APIView):
 
 class ANOVA_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            if CACHE:
+                res = cache.get(f"anova_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.anova(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+            )
+            if CACHE:
+                cache.set(
+                    f"anova_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
-
-class Regression_test_View(AuthenticatedAPIView, APIView):
-    def post(self, request, *args, **kwargs):
-        try:
-            pass
-        except Exception as e:
-            local_exception_handler(e)
-        finally:
-            pass
