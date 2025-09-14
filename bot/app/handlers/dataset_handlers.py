@@ -4,6 +4,7 @@ import re
 import zipfile
 import io
 import json
+import re
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram import F
@@ -55,9 +56,20 @@ from app.requests.dataset.patch_errors.patch_errors import patch_errors
 from app.requests.dataset.patch_categories.patch_groups import set_groups
 
 from app.keyboards.reply_dataset import create_reply_column_keyboard_group
+from app.states.states import SampleSize
+
+
+from app.requests.dataset import stats_handlers
+from math import floor, ceil
 #===========================================================================================================================
 # Меню
 #===========================================================================================================================
+def escape_md_v2(text: str) -> str:
+    """
+    Экранирует все специальные символы MarkdownV2 для Telegram.
+    """
+    escape_chars = r"_*[]()~`>#+-=|{}.!"
+    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
 
 @router.callback_query(F.data.startswith("ab_tests"))
 async def get_datasets_ab_test_menu(callback: CallbackQuery):
@@ -219,6 +231,74 @@ async def set_end_group(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, не удалось установить группы, попробуйте позже")
+
+#===========================================================================================================================
+# рассчет N
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("count_n"))
+async def count_n_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[2]
+        await state.update_data(id = dataset_id)
+        await callback.message.answer("Введите, какой минимальный эффект вы хотите обнаружить (в единицах измерения целевой метрики)")
+        await state.set_state(SampleSize.mde)
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+def format_mde_message(result):
+    from math import ceil
+
+    MDE = escape_md_v2(str(result['MDE']))
+    MDE_pct = escape_md_v2(f"{result['MDE_%']:.2f}")
+    test_size = escape_md_v2(str(ceil(result['test_size'])))
+    control_size = escape_md_v2(str(ceil(result['control_size'])))
+    n_total = escape_md_v2(str(ceil(result['n_total'])))
+
+    text = (
+        f"*Расчёт MDE и размеров выборки*\n\n"
+        f"📊 *Минимальная детектируемая разница \(MDE\)*:\n"
+        f"`{MDE}` \({MDE_pct}%\)\n\n"
+        f"👥 *Размеры выборок*\n"
+        f"Тестовая группа: `{test_size}`\n"
+        f"Контрольная группа: `{control_size}`\n"
+        f"Общее количество: `{control_size+test_size}`"
+    )
+    return text
+
+@router.message(SampleSize.mde)
+async def count_n_end(message: Message, state: FSMContext):
+    try:
+        mde = float(message.text)
+        if not mde:
+            raise ValueError("Invalid MDE given")
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        await message.answer("Запускаю рассчеты...")
+
+        response = await stats_handlers.count_n(
+            telegram_id=message.from_user.id,
+            id=dataset_id,
+            mde=mde
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+
+        await message.answer(
+            format_mde_message(result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Извините, произошла ошибка, попробуйте позже")
 
 #===========================================================================================================================
 # Заглушка

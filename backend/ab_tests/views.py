@@ -202,7 +202,7 @@ class SampleSizeView(AuthenticatedAPIView, APIView):
             columns = dataset_data.get("columns")
             test_column = dataset_data.get("test")
             control_column = dataset_data.get("control")
-            mde = request.get("mde", 5)
+            mde = request.data.get("mde", 5)
 
             if not columns or not test_column or not control_column:
                 raise ValueError("Could not get appropriate test and control column names")

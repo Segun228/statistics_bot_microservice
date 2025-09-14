@@ -73,3 +73,6 @@ class Groups(StatesGroup):
     test = State()
     controle = State()
 
+
+class SampleSize(StatesGroup):
+    mde = State()

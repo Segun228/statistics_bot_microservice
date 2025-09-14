@@ -61,6 +61,9 @@ def count_n(
         n1 = len(test)
         n2 = len(control)
         n = (test.var(ddof=1) + control.var(ddof=1))/((mde/(z.ppf(1- alpha/2) + z.ppf(1- beta)))**2)
+        
+
+        
         result = {
             "MDE":mde,
             "MDE_%":100*(mde / np.mean(pd.concat((test, control), axis=0, copy=True))),
