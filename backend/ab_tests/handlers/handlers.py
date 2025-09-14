@@ -864,3 +864,78 @@ def cuped(
         logging.error("Error while calculating")
         logging.exception(e)
         return None
+
+
+def bootstrap(
+    filepath_or_buffer,
+    test_column,
+    control_column,
+    alpha=0.05,
+    beta=0.2,
+    iterations = 10000,
+    related = False
+):
+    try:
+        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
+        test = df[test_column]
+        control = df[control_column]
+        if test.empty or control.empty:
+            raise ValueError("Error while extracting columns from the dataset")
+
+        n1 = len(test)
+        n2 = len(control)
+        mean1, mean2 = test.mean(), control.mean()
+        var1, var2 = test.var(ddof=1), control.var(ddof=1)
+        
+        pearson_obj = stats.pearsonr(test, control)
+        spearman_obj = stats.spearmanr(test, control)
+
+        pearson = pearson_obj[0]
+        spearman = spearman_obj[0]
+
+        pearson_p = pearson_obj[1]
+        spearman_p = spearman_obj[1]
+
+
+        boot_diffs = []
+        for _ in range(iterations):
+            t_sample = np.random.choice(test, size=len(test), replace=True)
+            c_sample = np.random.choice(control, size=len(control), replace=True)
+            boot_diffs.append(np.mean(t_sample) - np.mean(c_sample))
+
+        ci = np.percentile(boot_diffs, [2.5, 97.5])
+        effect = ""
+        if 0 > ci[0] and 0 < ci[1]:
+            effect = False
+        else:
+            effect = True
+
+        warning = "Bootstrap is a very expensive method, it can take a while to finish the calculations. \n\n Bootstrap results can be unpredictable if the sample is non-representative, or the sample has N<10\n"
+        if pearson_p < alpha:
+            warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
+        if spearman_p < alpha:
+            warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
+        if pearson_p >= alpha and spearman_p >= alpha:
+            warning += "Test and control appear independent\n"
+
+        result = {
+            "n1": n1,
+            "n2": n2,
+            "ci": ci,
+            "var_test":var1,
+            "var_control":var2,
+            "mean_test":mean1,
+            "mean_control":mean2,
+            "effect": effect,
+            "pearson":pearson,
+            "spearman":spearman,
+            "pearson_p":pearson_p,
+            "spearman_p":spearman_p,
+            "warning":warning
+        }
+
+        return Response(result), result
+    except Exception as e:
+        logging.error("Error while calculating")
+        logging.exception(e)
+        return HttpResponseBadRequest("Error while calculating", e.__str__()), None

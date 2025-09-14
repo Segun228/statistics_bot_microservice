@@ -767,12 +767,57 @@ class Anderson_Darling_test_View(AuthenticatedAPIView, APIView):
 
 class Bootstrap_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
+        load_dotenv()
         try:
-            pass
+            dataset_id = (kwargs.get("dataset_id"))
+            reps = request.data.get("iterations", 10000)
+            if CACHE:
+                res = cache.get(f"bootstrap_user_{self.request.user.id}_dataset_{dataset_id}")
+                if res:
+                    return Response(res)
+            if dataset_id:
+                dataset_id = int(dataset_id)
+            else:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user = self.request.user, id = dataset_id)
+            if not dataset:
+                raise NotFound("Corresponding dataset was not found")
+            
+            dataset_data = model_to_dict(dataset)
+            if not dataset_data:
+                raise NotFound("Could not transform dataset indo dictionary")
+
+            alpha = dataset_data.get("alpha") or 0.05
+            beta = dataset_data.get("beta") or 0.2
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Could not get appropriate test and control column names")
+            buffer = download_dataset(dataset)
+            if not buffer:
+                raise ValueError("Could not download the dataset")
+            result = handlers.bootstrap(
+                filepath_or_buffer = buffer,
+                test_column = test_column,
+                control_column = control_column,
+                alpha=alpha,
+                beta=beta,
+                iterations = reps
+            )
+            if CACHE:
+                cache.set(
+                    f"bootstrap_user_{self.request.user.id}_dataset_{dataset_id}",
+                    result[1]
+                )
+            return result[0]
+
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
 
 
 class Cuped_View(AuthenticatedAPIView, APIView):
