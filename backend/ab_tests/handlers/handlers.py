@@ -821,3 +821,46 @@ def anova(
         logging.error("Error while calculating")
         logging.exception(e)
         return HttpResponseBadRequest("Error while calculating", e.__str__()), None
+
+
+def cuped(
+    filepath_or_buffer,
+    test_column,
+    control_column,
+    history_buf,
+    history_col,
+    alpha,
+    beta,
+):
+    try:
+        history_df = pd.read_csv(history_buf)
+        if history_col in history_df.columns:
+            hist_series = history_df[history_col]
+        else:
+            hist_series = history_df.iloc[:, 0]
+        if hist_series is None or hist_series.empty:
+            raise ValueError("Историческая колонка пуста")
+
+        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
+        test = df[test_column]
+        control = df[control_column]
+        if test.empty or control.empty:
+            raise ValueError("Error while extracting columns from the dataset")
+
+        theta = np.cov(pd.concat((test, control), axis=0), hist_series)[0, 1]/np.var(hist_series, ddof=1)
+        if len(test) != len(control) or len(control) != len(hist_series):
+            min_length = min(len(control), len(test), len(hist_series))
+            test = test.iloc[:min_length]
+            control = control.iloc[:min_length]
+            hist_series = hist_series.iloc[:min_length]
+            df = df.iloc[:min_length]
+        hist_mean = hist_series.mean()
+        test_cuped = test - theta*(hist_series - hist_mean)
+        control_cuped = control - theta*(hist_series - hist_mean)
+        df[test_column] = test_cuped
+        df[control_column] = control_cuped
+        return df
+    except Exception as e:
+        logging.error("Error while calculating")
+        logging.exception(e)
+        return None

@@ -193,6 +193,8 @@ class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIVi
             df = pd.read_csv(buffer)
             df.dropna()
             records = df.shape[0]
+            buffer = BytesIO(df)
+            
             response = requests.put(
                 url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
                 data=buffer.getvalue(),

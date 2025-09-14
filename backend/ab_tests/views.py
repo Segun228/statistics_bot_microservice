@@ -59,6 +59,7 @@ import scipy.stats as stats
 import sklearn as skl
 
 from .handlers import handlers
+import io
 load_dotenv()
 
 class AuthenticatedAPIView:
@@ -67,7 +68,13 @@ class AuthenticatedAPIView:
 
 
 logger = logging.getLogger(__name__)
-CACHE =os.getenv("CACHE")
+CACHE = os.getenv("CACHE")
+
+CLOUD_API_KEY = os.getenv("CLOUD_API_KEY")
+if not CLOUD_API_KEY:
+    raise ValueError("An error occured while trying to get env variable CLOUD_API_KEY")
+
+
 if not CACHE or CACHE.lower() in ("no", "false", "none", "na", "0", 0, -1):
     CACHE = False
 else:
@@ -771,11 +778,68 @@ class Bootstrap_View(AuthenticatedAPIView, APIView):
 class Cuped_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
         try:
-            pass
+            dataset_id = kwargs.get("dataset_id")
+            if not dataset_id:
+                raise ValueError("Invalid dataset id given")
+
+            dataset = Dataset.objects.get(user=request.user, id=int(dataset_id))
+            dataset_data = model_to_dict(dataset)
+
+            alpha = dataset_data.get("alpha")
+            beta = dataset_data.get("beta")
+            alpha = alpha if alpha is not None else 0.05
+            beta = beta if beta is not None else 0.2
+
+            columns = dataset_data.get("columns")
+            test_column = dataset_data.get("test")
+            control_column = dataset_data.get("control")
+
+            if not columns or not test_column or not control_column:
+                raise ValueError("Could not get appropriate test and control column names")
+            if test_column not in columns or control_column not in columns:
+                raise ValueError("Test/control columns not in dataset columns")
+
+            history_file = request.FILES.get('file')
+            if not history_file:
+                raise ValueError("History file not provided")
+            history_col = request.POST.get('column_name')
+            if not history_col:
+                raise ValueError("Column name for historical data not provided")
+
+            history_data_buf = io.BytesIO(history_file.read())
+            dataset_buf = download_dataset(dataset)
+            if not dataset_buf:
+                raise ValueError("Could not download the dataset")
+
+            result_df = handlers.cuped(
+                filepath_or_buffer=dataset_buf,
+                test_column=test_column,
+                control_column=control_column,
+                history_buf=history_data_buf,
+                alpha=alpha,
+                beta=beta,
+                history_col=history_col,
+            )
+            if result_df is None:
+                raise ValueError("Error while conducting CUPED")
+
+            csv_buffer = io.StringIO()
+            result_df.to_csv(csv_buffer, index=False)
+            byte_buffer = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+
+            response = requests.put(
+                url=dataset.url,
+                data=byte_buffer.getvalue(),
+                headers={
+                    "Authorization": f"Bearer {CLOUD_API_KEY}",
+                    "Content-Type": "text/csv"
+                }
+            )
+            response.raise_for_status()
+            return Response({"status": 200, "success": True})
         except Exception as e:
             local_exception_handler(e)
-        finally:
-            pass
+            return Response({"status": 500, "error": str(e)})
 
 
 class ANOVA_View(AuthenticatedAPIView, APIView):
