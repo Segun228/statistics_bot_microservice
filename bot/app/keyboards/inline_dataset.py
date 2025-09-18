@@ -16,6 +16,17 @@ async def get_dataset_single_menu(dataset_id):
     return keyboard.adjust(1).as_markup()
 
 
+async def get_confirm_menu(
+    true_callback = "confirm_ztest",
+    false_callback = "catalogue",
+    dataset_id = None
+):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Подтвердить", callback_data="confirm_ztest"))
+    keyboard.add(InlineKeyboardButton(text="Отмена", callback_data=f"dataset_{dataset_id}"))
+    return keyboard.adjust(1).as_markup()
+
+
 async def get_dataset_ab_menu(dataset_id):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(InlineKeyboardButton(text="Указать тестовую и контрольную группы", callback_data=f"set_groups_{dataset_id}"))

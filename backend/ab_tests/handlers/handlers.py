@@ -110,11 +110,11 @@ def z_test(
         spearman_p = spearman_obj[1]
 
         warning = "Z-test should be used when you know population variance, not sample variance.\n"
-        if pearson_p < alpha:
+        if pearson > 0.5:
             warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
-        if spearman_p < alpha:
+        if spearman > 0.5:
             warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
-        if pearson_p >= alpha and spearman_p >= alpha:
+        if pearson > 0.5 and spearman > 0.5:
             warning += "Test and control appear independent\n"
 
         result = {

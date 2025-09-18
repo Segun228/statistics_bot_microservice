@@ -21,7 +21,7 @@ from app.keyboards import inline_user as inline_user_keyboards
 
 from app.keyboards import inline_dataset as inline_keyboards
 
-from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors, Groups
+from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors, Groups, Confirm
 
 from aiogram.types import BufferedInputFile
 
@@ -64,12 +64,12 @@ from math import floor, ceil
 #===========================================================================================================================
 # Меню
 #===========================================================================================================================
+
 def escape_md_v2(text: str) -> str:
-    """
-    Экранирует все специальные символы MarkdownV2 для Telegram.
-    """
-    escape_chars = r"_*[]()~`>#+-=|{}.!"
-    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
+    if not isinstance(text, str):
+        text = str(text)
+    escape_chars = r"_*[]()~`>#+-=|{}.!\\"
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 @router.callback_query(F.data.startswith("ab_tests"))
 async def get_datasets_ab_test_menu(callback: CallbackQuery):
@@ -256,7 +256,6 @@ def format_mde_message(result):
     test_size = escape_md_v2(str(ceil(result['test_size'])))
     control_size = escape_md_v2(str(ceil(result['control_size'])))
     n_total = escape_md_v2(str(ceil(result['n_total'])))
-
     text = (
         f"*Расчёт MDE и размеров выборки*\n\n"
         f"📊 *Минимальная детектируемая разница \(MDE\)*:\n"
@@ -264,7 +263,7 @@ def format_mde_message(result):
         f"👥 *Размеры выборок*\n"
         f"Тестовая группа: `{test_size}`\n"
         f"Контрольная группа: `{control_size}`\n"
-        f"Общее количество: `{control_size+test_size}`"
+        f"Общее количество: `{round(float(control_size))+round(float(test_size))}`"
     )
     return text
 
@@ -299,6 +298,140 @@ async def count_n_end(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+#===========================================================================================================================
+# рассчет MDE
+#===========================================================================================================================
+
+@router.callback_query(F.data.startswith("count_mde"))
+async def count_mde_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[2]
+        await callback.message.answer("Уже считаю, подождите немного...")
+        response = await stats_handlers.count_n(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_mde_message(result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# Z-test
+#===========================================================================================================================
+
+def format_test_message(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        z = result.get('z', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты Z\-теста*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 Z\-статистика:* `{z:.3f}`\n"
+            f"*📉 P\-значение:* `{p:.3f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.3f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.3f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("ztest_"))
+async def ztest_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Z-тест накладывает на данные ограничения")
+        await callback.message.answer("Для корректности теста необходимо, чтобы при рассчете выборка была репрезентативна, а также дисперсия ген. совокупности совпадала с выборочной (особенности программного рассчета)")
+        await callback.message.answer("При N<30 данные должны быть нормальными")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ztest",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ztest"))
+async def ztest_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.z_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
 
 #===========================================================================================================================
 # Заглушка
@@ -337,6 +470,7 @@ async def send_post_photos(callback: CallbackQuery, post: Dict[str, Any]):
         source="inline",
         payload="undefined"
     )
+
 
 #===========================================================================================================================
 # Отлов неизвестных обработчиков

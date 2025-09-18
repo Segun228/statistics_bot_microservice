@@ -76,3 +76,8 @@ class Groups(StatesGroup):
 
 class SampleSize(StatesGroup):
     mde = State()
+
+
+class Confirm(StatesGroup):
+    bundle = State()
+    confirmed = State()
