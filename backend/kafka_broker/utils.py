@@ -1,4 +1,5 @@
-from kafka import KafkaProducer
+from confluent_kafka import Producer, KafkaError
+from confluent_kafka.admin import AdminClient, NewTopic
 import json
 import logging
 import uuid
@@ -6,12 +7,8 @@ import time
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.errors import TopicAlreadyExistsError, NoBrokersAvailable
-
 
 load_dotenv()
-
 
 KAFKA_BROKER_DOCKER = os.getenv("KAFKA_BROKER_DOCKER")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL")
@@ -21,38 +18,41 @@ LOGS = os.getenv("LOGS")
 if not LOGS or LOGS.lower() in ("0", "false", "no", "nan", ""):
     LOGS = False
 
-
 def ensure_topic_exists():
     for i in range(10):
         try:
-            admin_client = KafkaAdminClient(
-                bootstrap_servers=KAFKA_BROKER_DOCKER,
-                client_id="admin_client"
-            )
+            admin_client = AdminClient({
+                'bootstrap.servers': KAFKA_BROKER_DOCKER
+            })
 
-            topic_list = [NewTopic(
-                name=KAFKA_TOPIC,
+            topic = NewTopic(
+                KAFKA_TOPIC,
                 num_partitions=1,
                 replication_factor=1
-            )]
+            )
 
-            admin_client.create_topics(new_topics=topic_list, validate_only=False)
-            logging.info(f"Kafka topic '{KAFKA_TOPIC}' created")
-            admin_client.close()
-            return
-
-        except TopicAlreadyExistsError:
-            logging.info(f"Kafka topic '{KAFKA_TOPIC}' already exists")
-            admin_client.close()
-            return
-
-        except NoBrokersAvailable:
-            logging.warning(f"[{i+1}/10] Kafka broker not available, retrying in 3s...")
-            time.sleep(3)
+            fs = admin_client.create_topics([topic])
+            
+            for topic_name, f in fs.items():
+                try:
+                    f.result()
+                    logging.info(f"Kafka topic '{topic_name}' created")
+                    return
+                except Exception as e:
+                    if "already exists" in str(e):
+                        logging.info(f"Kafka topic '{topic_name}' already exists")
+                        return
+                    else:
+                        raise e
 
         except Exception as e:
-            logging.error(f"Unexpected error: {e}")
-
+            error_str = str(e)
+            if "Broker transport failure" in error_str or "No brokers available" in error_str:
+                logging.warning(f"[{i+1}/10] Kafka broker not available, retrying in 3s...")
+                time.sleep(3)
+            else:
+                logging.error(f"Unexpected error creating topic: {e}")
+                break
 
 _producer = None
 
@@ -60,27 +60,32 @@ def get_producer():
     global _producer
     if _producer is None:
         try:
-            _producer = KafkaProducer(
-                bootstrap_servers=KAFKA_BROKER_DOCKER,
-                client_id=PRODUCER_CLIENT_ID,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
+            _producer = Producer({
+                'bootstrap.servers': KAFKA_BROKER_DOCKER,
+                'client.id': PRODUCER_CLIENT_ID,
+                'message.timeout.ms': 5000,
+                'retries': 3
+            })
         except Exception as e:
             logging.warning(f"Kafka producer not available: {e}")
             _producer = None
     return _producer
 
-
+def delivery_report(err, msg):
+    if err is not None:
+        logging.error(f'Message delivery failed: {err}')
+    else:
+        logging.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
 
 def build_log_message(
     user_id,
     is_authenticated,
     telegram_id,
     action,
-    response_code = 200,
-    request_method = "GET",
+    response_code=200,
+    request_method="GET",
     request_body=None,
-    platform = "backend",
+    platform="backend",
     level="INFO",
     source="backend",
     env="prod",
@@ -106,47 +111,53 @@ def build_log_message(
     if LOGS:
         return send_to_kafka(message)
     logging.warning("The LOGS mode is turned off or the variable is not set")
-
-
-def serialize_bytes(obj):
-    if isinstance(obj, bytes):
-        return obj.decode("utf-8", errors="replace")
-    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+    return {"status": "skipped", "reason": "logs_disabled"}
 
 def send_to_kafka(data):
     if not LOGS:
         logging.warning("The LOGS mode is turned off or the variable is not set")
-        return
+        return {"status": "skipped", "reason": "logs_disabled"}
+        
     producer = get_producer()
     if producer is None:
-        logging.info(f"Kafka not available, skipping log: {data}")
-        return {"status": "skipped", "messages_sent": 0}
+        logging.info(f"Kafka not available, skipping log")
+        return {"status": "skipped", "reason": "producer_unavailable"}
 
     try:
         messages = []
 
         if isinstance(data, list):
-            for el in data:
-                if hasattr(el, "dict"):
-                    el = el.dict()
-                serialized = json.dumps(el, default=serialize_bytes).encode("utf-8")
-                messages.append(el)
-                producer.send(KAFKA_TOPIC, value=serialized)
+            for item in data:
+                if hasattr(item, "dict"):
+                    item = item.dict()
+                messages.append(item)
+                producer.produce(
+                    KAFKA_TOPIC,
+                    json.dumps(item).encode('utf-8'),
+                    callback=delivery_report
+                )
         else:
             if hasattr(data, "dict"):
                 data = data.dict()
-            serialized = json.dumps(data, default=serialize_bytes).encode("utf-8")
             messages.append(data)
-            producer.send(KAFKA_TOPIC, value=serialized)
+            producer.produce(
+                KAFKA_TOPIC,
+                json.dumps(data).encode('utf-8'),
+                callback=delivery_report
+            )
 
-        producer.flush()
+        producer.flush(timeout=5)
+        
         return {
-            "status": "ok",
-            "code": 200,
+            "status": "success",
             "messages_sent": len(messages),
             "sample": messages[0] if messages else None,
         }
 
     except Exception as e:
-        logging.exception(f"[Kafka] Ошибка отправки: {e}")
+        logging.error(f"Failed to send to Kafka: {e}")
         return {"status": "failed", "error": str(e)}
+
+
+if LOGS:
+    ensure_topic_exists()

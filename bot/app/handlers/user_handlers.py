@@ -66,7 +66,7 @@ async def cmd_start_admin(message: Message, state: FSMContext):
     await message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
     await message.answer("Я много что умею 👇", reply_markup=inline_keyboards.main)
     await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -87,7 +87,7 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("Я предоставляю полный инструментарий для МатСтата и АБтестов")
     await callback.message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
     await callback.answer()
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -96,7 +96,7 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Command("help"))
 async def cmd_help(message: Message):
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -106,7 +106,7 @@ async def cmd_help(message: Message):
 
 @router.message(Command("contacts"))
 async def cmd_contacts(message: Message):
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -117,7 +117,7 @@ async def cmd_contacts(message: Message):
 
 @router.callback_query(F.data == "contacts")
 async def contacts_callback(callback: CallbackQuery):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="menu",
@@ -129,7 +129,7 @@ async def contacts_callback(callback: CallbackQuery):
 
 @router.callback_query(F.data == "main_menu")
 async def main_menu_callback(callback: CallbackQuery):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="menu",
@@ -143,7 +143,7 @@ async def main_menu_callback(callback: CallbackQuery):
 #===========================================================================================================================
 @router.callback_query(F.data == "catalogue")
 async def catalogue_callback_admin(callback: CallbackQuery):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="menu",
@@ -172,7 +172,7 @@ async def distribution_catalogue_callback_admin(callback: CallbackQuery):
     try:
         await callback.answer()
         distribution_id = callback.data.split("_")[1]
-        build_log_message(
+        await build_log_message(
             telegram_id=callback.from_user.id,
             action="callback",
             source="menu",
@@ -207,7 +207,7 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
     try:
         await callback.answer()
         dataset_id = callback.data.split("_")[1]
-        build_log_message(
+        await build_log_message(
             telegram_id=callback.from_user.id,
             action="callback",
             source="menu",
@@ -259,7 +259,7 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
 
 @router.callback_query(F.data == "create_distribution")
 async def distribution_create_callback(callback: CallbackQuery, state: FSMContext):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -414,7 +414,7 @@ async def category_enter_name_admin(message: Message, state: FSMContext):
 async def distribution_edit_callback(callback: CallbackQuery, state: FSMContext):
     distribution_id = callback.data.split("_")[2]
     await state.update_data(id = distribution_id)
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -576,7 +576,7 @@ async def distribution_delete_callback_admin(callback: CallbackQuery, state: FSM
         return
     await callback.message.answer("Распределение удалено!", reply_markup=await get_distributions_catalogue(telegram_id = callback.from_user.id))
     await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -589,7 +589,7 @@ async def distribution_delete_callback_admin(callback: CallbackQuery, state: FSM
 
 @router.callback_query(F.data == "create_dataset")
 async def dataset_create_callback(callback: CallbackQuery, state: FSMContext):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -640,7 +640,7 @@ async def get_dataset_file_message(message: Message, state: FSMContext, bot:Bot)
 @router.callback_query(F.data.startswith("edit_dataset"))
 async def dataset_edit_callback(callback: CallbackQuery, state: FSMContext):
     dataset_id = callback.data.strip().split("_")[2]
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -702,7 +702,7 @@ async def dataset_delete_callback_admin(callback: CallbackQuery, state: FSMConte
         return
     await callback.message.answer("Датасет удален!", reply_markup=await get_distributions_catalogue(telegram_id = callback.from_user.id))
     await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",

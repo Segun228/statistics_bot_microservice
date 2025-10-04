@@ -1,14 +1,12 @@
-from kafka import KafkaProducer
+from aiokafka import AIOKafkaProducer
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
 import json
 import logging
 import uuid
-import json
-import logging
 import os
+import asyncio
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.errors import TopicAlreadyExistsError
 
 load_dotenv()
 
@@ -16,73 +14,80 @@ KAFKA_BROKER_DOCKER = os.getenv("KAFKA_BROKER_DOCKER")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC")
 PRODUCER_CLIENT_ID = os.getenv("PRODUCER_CLIENT_ID")
-LOGS = os.getenv("LOGS")
-
+LOGS = os.getenv("LOGS", "false").lower() == "true"
 
 if not KAFKA_BROKER_DOCKER:
     raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
-if not LOGS or LOGS.lower() in (0, "0", "false", "no", "nan", 'null', 'none'):
-    LOGS = False
-else:
-    LOGS = True
-
-def ensure_topic_exists():
-    if not LOGS:
-        logging.warning("The logging mode is turned off")
-        return
-    admin_client = KafkaAdminClient(
-        bootstrap_servers=KAFKA_BROKER_DOCKER,
-        client_id="admin_client"
-    )
-
-    topic_list = [NewTopic(
-        name=KAFKA_TOPIC,
-        num_partitions=1,
-        replication_factor=1
-    )]
-
-    try:
-        admin_client.create_topics(new_topics=topic_list, validate_only=False)
-        print(f"Topic '{KAFKA_TOPIC}' created")
-    except TopicAlreadyExistsError:
-        print(f"Topic '{KAFKA_TOPIC}' already exists")
-    finally:
-        admin_client.close()
 
 _producer = None
 
-def get_producer():
+async def ensure_topic_exists():
     if not LOGS:
         logging.warning("The logging mode is turned off")
         return
+    
+    try:
+        if not KAFKA_BROKER_DOCKER:
+            raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
+        admin_client = AIOKafkaAdminClient(
+            bootstrap_servers=KAFKA_BROKER_DOCKER,
+            client_id="admin_client"
+        )
+        
+        await admin_client.start()
+        
+        topic_list = [NewTopic(
+            name=KAFKA_TOPIC,
+            num_partitions=1,
+            replication_factor=1
+        )]
+
+        try:
+            await admin_client.create_topics(new_topics=topic_list)
+            print(f"Topic '{KAFKA_TOPIC}' created")
+        except Exception as e:
+            if "TopicAlreadyExistsError" in str(e) or "already exists" in str(e):
+                print(f"Topic '{KAFKA_TOPIC}' already exists")
+            else:
+                raise e
+                
+    except Exception as e:
+        logging.error(f"Failed to create topic: {e}")
+    finally:
+        await admin_client.close()
+
+async def get_producer():
     global _producer
+    if not LOGS:
+        return None
+    if not KAFKA_BROKER_DOCKER:
+        raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
     if _producer is None:
         try:
-            from kafka import KafkaProducer
-            import json
-            _producer = KafkaProducer(
+            _producer = AIOKafkaProducer(
                 bootstrap_servers=KAFKA_BROKER_DOCKER,
                 client_id=PRODUCER_CLIENT_ID,
+                value_serializer=lambda v: json.dumps(v).encode('utf-8')
             )
+            await _producer.start()
         except Exception as e:
-            logging.warning(f"Kafka producer not available: {e}")
+            logging.error(f"Kafka producer not available: {e}")
             _producer = None
     return _producer
 
-
-def build_log_message(
+async def build_log_message(
     telegram_id,
     action,
     source,
-    payload = None,
-    platform = "bot",
+    payload=None,
+    platform="bot",
     level="INFO",
     env="prod",
     timestamp=None
 ):
     if not LOGS:
-        logging.warning("The logging mode is turned off")
-        return
+        return {"status": "skipped", "reason": "logging_disabled"}
+    
     message = {
         "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
         "trace_id": str(uuid.uuid4()),
@@ -93,53 +98,79 @@ def build_log_message(
         "event_type": action,
         "source": source,
         "env": env,
-        "message": f"User {telegram_id} performed {action}"
+        "message": f"User {telegram_id} performed {action}",
+        "payload": payload
     }
+    
+    return await send_to_kafka(message)
 
-    return send_to_kafka(message)
-
-def serialize_bytes(obj):
-    if isinstance(obj, bytes):
-        return obj.decode("utf-8", errors="replace")
-    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-def send_to_kafka(data):
+async def send_to_kafka(data):
     if not LOGS:
-        logging.warning("The logging mode is turned off")
-        return
-    producer = get_producer()
+        return {"status": "skipped", "reason": "logging_disabled"}
+        
+    producer = await get_producer()
     if producer is None:
         logging.info(f"Kafka not available, skipping log: {data}")
-        return {"status": "skipped", "messages_sent": 0}
+        return {"status": "skipped", "reason": "producer_unavailable"}
 
     try:
         messages = []
-
+        
         if isinstance(data, list):
-            for el in data:
-                if hasattr(el, "dict"):
-                    el = el.dict()
-                serialized = json.dumps(el, default=serialize_bytes).encode("utf-8")
-                messages.append(el)
-                producer.send(KAFKA_TOPIC, value=serialized)
+            for item in data:
+                if hasattr(item, "dict"):
+                    item = item.dict()
+                messages.append(item)
+                await producer.send_and_wait(KAFKA_TOPIC, value=item)
         else:
             if hasattr(data, "dict"):
                 data = data.dict()
-            serialized = json.dumps(data, default=serialize_bytes).encode("utf-8")
             messages.append(data)
-            producer.send(KAFKA_TOPIC, value=serialized)
+            await producer.send_and_wait(KAFKA_TOPIC, value=data)
 
-        producer.flush()
-        res = {
-            "status": "ok",
-            "code": 200,
+        result = {
+            "status": "success",
             "messages_sent": len(messages),
             "sample": messages[0] if messages else None,
         }
-        logging.debug(res)
-        logging.info("Logged to Kafka successfully!")
-        return res
+        logging.info(f"Logged {len(messages)} messages to Kafka successfully!")
+        return result
 
     except Exception as e:
-        logging.exception(f"[Kafka] Ошибка отправки: {e}")
+        logging.error(f"Failed to send to Kafka: {e}")
         return {"status": "failed", "error": str(e)}
+
+async def close_producer():
+    global _producer
+    if _producer:
+        await _producer.stop()
+        _producer = None
+
+
+def build_log_message_sync(
+    telegram_id,
+    action,
+    source,
+    payload=None,
+    platform="bot",
+    level="INFO",
+    env="prod",
+    timestamp=None
+):
+    if not LOGS:
+        return {"status": "skipped", "reason": "logging_disabled"}
+    
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(
+        build_log_message(telegram_id, action, source, payload, platform, level, env, timestamp)
+    )
+
+
+async def init_kafka():
+    if LOGS:
+        await ensure_topic_exists()
+        await get_producer()
+
+
+async def async_init():
+    await init_kafka()
