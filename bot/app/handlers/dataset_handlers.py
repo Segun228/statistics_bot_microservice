@@ -61,6 +61,21 @@ from app.states.states import SampleSize
 
 from app.requests.dataset import stats_handlers
 from math import floor, ceil
+
+def escape_md(text: str) -> str:
+    """Экранирование специальных символов для MarkdownV2"""
+    if not text:
+        return ""
+    
+    escape_chars = '_*[]()~`>#+-=|{}.!'
+    result = []
+    for char in str(text):
+        if char in escape_chars:
+            result.append(f'\\{char}')
+        else:
+            result.append(char)
+    return ''.join(result)
+
 #===========================================================================================================================
 # Меню
 #===========================================================================================================================
@@ -212,19 +227,30 @@ async def set_end_group(message:Message, state:FSMContext):
                 await message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=message.from_user.id))
                 return
             data = current_dataset
+
+            name = escape_md(data['name'])
+            alpha = escape_md(str(data['alpha']))
+            beta = escape_md(str(data['beta']))
+            test_val = escape_md(str(data['test']) or "Not set yet")
+            control_val = escape_md(str(data['control']) or "Not set yet")
+            length = escape_md(str(data['length']) or "Not set yet")
+
+
             params = data['columns']
             param_string = "\n"
             for nam in params:
-                param_string += f"*{nam}*\n"
+                escaped_nam = escape_md(nam)
+                param_string += f"*{escaped_nam}*\n"
             param_string += "\n"
+
             msg = (
-                f"*Name:* {data['name']}\n\n"
+                f"*Name:* {name}\n\n"
                 f"*Columns:* {param_string}"
-                f"*Alpha:* {str(data['alpha']).replace(".", "\.")}\n"
-                f"*Beta:* {str(data['beta']).replace(".", "\.")}\n\n"
-                f"*Test group:* {str(data['test']).replace(".", "\.") or "Not set yet"}\n"
-                f"*Controle group:* {str(data['control']).replace(".", "\.") or "Not set yet"}\n\n"
-                f"*Final length:* {str(data['length']).replace(".", "\.") or "Not set yet"}\n"
+                f"*Alpha:* {alpha}\n"
+                f"*Beta:* {beta}\n\n"
+                f"*Test group:* {test_val}\n"
+                f"*Controle group:* {control_val}\n\n"
+                f"*Final length:* {length}\n"
             )
             await message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
         
@@ -373,13 +399,13 @@ def format_test_message(response):
             f"Контроль: `{var_control:.2f}`\n"
             f"Тест: `{var_test:.2f}`\n\n"
 
-            f"*🧪 Z\-статистика:* `{z:.3f}`\n"
-            f"*📉 P\-значение:* `{p:.3f}`\n"
+            f"*🧪 Z\-статистика:* `{z:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
             f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
 
             f"*📉 Корреляции:*\n"
-            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.3f}`\)\n"
-            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.3f}`\)\n\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
 
             f"*⚠️ Предупреждение:*\n"
             f"{escape_md_v2(warning)}"
@@ -420,7 +446,6 @@ async def ztest_end(callback: CallbackQuery, state:FSMContext):
         )
         if not response:
             raise ValueError("An error occurred during calculation")
-
         result = response if isinstance(response, dict) else json.loads(response.data)
 
         await callback.message.answer(
@@ -433,56 +458,1084 @@ async def ztest_end(callback: CallbackQuery, state:FSMContext):
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
 
-#===========================================================================================================================
-# Заглушка
-#===========================================================================================================================
-
-@router.message()
-async def all_other_messages(message: Message):
-    await message.answer("Неизвестная команда 🧐")
-    photo_data = await get_cat_error_async()
-    if photo_data:
-        photo_to_send = BufferedInputFile(photo_data, filename="cat_error.jpg")
-        await message.bot.send_photo(chat_id=message.chat.id, photo=photo_to_send)
-
-
-async def send_post_photos(callback: CallbackQuery, post: Dict[str, Any]):
-    photo_ids = post.get('photos', [])
-
-    if not photo_ids:
-        await callback.message.answer("К сожалению, у этой позиции нет фотографий. 🖼️")
-        return
-
-    first_photo_id = photo_ids[0]
-    caption_text = f"**{post.get('title', 'Без названия')}**"
-    
-    await callback.message.answer_photo(
-        photo=first_photo_id,
-        caption=caption_text,
-        parse_mode="MarkdownV2"
-    )
-
-    for photo_id in photo_ids[1:]:
-        await callback.message.answer_photo(photo=photo_id)
-    build_log_message(
-        telegram_id=callback.from_user.id,
-        action="callback",
-        source="inline",
-        payload="undefined"
-    )
 
 
 #===========================================================================================================================
-# Отлов неизвестных обработчиков
+# T-test
 #===========================================================================================================================
 
-@router.callback_query()
-async def unknown_callback(callback: CallbackQuery):
-    logging.info(f"UNHANDLED CALLBACK: {callback.data}")
-    await callback.answer(f"⚠️ Это действие не распознано. Получено: {callback.data}", show_alert=True)
-    build_log_message(
-        telegram_id=callback.from_user.id,
-        action="callback",
-        source="inline",
-        payload="undefined"
-    )
+def format_test_message_ttest(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        t = result.get('z', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты T\-теста*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 T\-статистика:* `{t:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("ttest_"))
+async def ttest_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("T-тест накладывает на данные ограничения")
+        await callback.message.answer("Для корректности теста необходимо, чтобы при рассчете выборки были независимы")
+        await callback.message.answer("При N<30 данные должны быть нормальными")
+        await callback.message.answer("Если дисперсии теста и контроля значительно различаются, вам следует использовать тест Уэлча")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ttest",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ttest"))
+async def ttest_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.t_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_ttest(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# chisquare-test
+#===========================================================================================================================
+
+def format_test_message_shisquare(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        chi2_stat = result.get('chi2_stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты Chi2\-теста*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 Хи\-квадрат\-статистика:* `{chi2_stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("chi2test_"))
+async def chi2test_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест хи-увадрат накладывает на данные ограничения")
+        await callback.message.answer("Данные должны либо быть категориальными, либо искомая метрика должна быть метрикой пропорции")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_chi2test",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_chi2test"))
+async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.chi2_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_shisquare(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+
+#===========================================================================================================================
+# U-test
+#===========================================================================================================================
+
+def format_test_message_U(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Манна\-Уитни*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 U\-статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("utest_"))
+async def utest_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Критерий Манна-Уитни - непараметрический тест, не требует нормальности")
+        await callback.message.answer("Данные должны быть порядковыми или ранговыми, независимыми")
+        await callback.message.answer("Дисперсии и формы распределений не должны сильно различаться")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_utest",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_utest"))
+async def confirm_u_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.u_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_U(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# Welch`s test
+#===========================================================================================================================
+
+def format_test_message_welch(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Уэлча*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 T\-статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("welchtest_"))
+async def welchtest_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест Уелча - параметрический тест")
+        await callback.message.answer("Данные должны быть порядковыми или ранговыми, независимыми")
+        await callback.message.answer("Дисперсии могут быть не равны")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_welch",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_welch"))
+async def confirm_welch_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.welch_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_welch(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+
+#===========================================================================================================================
+# Anderson-Darling`s test
+#===========================================================================================================================
+
+def format_test_message_ad(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+        effect_control = result.get('effect_control', 0.0)
+        control_stat = result.get('control_stat', 0.0)
+        control_p = result.get('control_p', 1.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Андерсона\-Дарлинга*\n"
+            f"Были проверены обе группы\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"Нулевая гипотеза: данные соответствуют нормальному распределению\n\n"
+
+            f"*🧪 Статистика тестовой группы:* `{stat:.5f}`\n"
+            f"*📉 P\-значение тестовой группы:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*🧪 Статистика контрольной группы:* `{control_stat:.5f}`\n"
+            f"*📉 P\-значение контрольной группы:* `{control_p:.5f}`\n\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect_control)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("andersondarlingtest_"))
+async def andersondarlingtest_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест Андерсона-Дарлинга - непараметрический тест для проверки соответствия распределению")
+        await callback.message.answer("Тест чувствителен к выбросам, попробуйте также тест Шапиро-Уилка")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ad",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ad"))
+async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.ad_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_ad(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+#===========================================================================================================================
+# Cramer`s test
+#===========================================================================================================================
+
+
+def format_test_message_cr(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Крамера\-фон\-Мизеса*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 Статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+
+@router.callback_query(F.data.startswith("cramertest_"))
+async def cramer_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест Крамера-фон-Мизеса - непараметрический тест для проверки соответствия распределению, в данном случае проверяет нулевую гипотезу о том что обе выборки пришли из одного и того де распределения")
+        await callback.message.answer("Тест требует интегрируемость по Риману, функция распредеелния должна быть непрерывной")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_cramer",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_cramer"))
+async def confirm_cramer_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.cramer_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_cr(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# 2 sample Anderson-Darling`s test
+#===========================================================================================================================
+
+
+def format_test_message_ad2(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Андерсона\-Дарлинга*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 Статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+
+@router.callback_query(F.data.startswith("andersondarling2sampletest_"))
+async def ad2_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Двувыборочный тест Андерсона-Дарлинга - непараметрический тест для проверки соответствия распределению, в данном случае проверяет нулевую гипотезу о том что обе выборки пришли из одного и того де распределения")
+        await callback.message.answer("Усиленная версия теста Крамера-фон-Мизеса")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ad2",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ad2"))
+async def confirm_ad2_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.cramer_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_cr(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# 2 sample Kolmogorov-Smirnov`s test
+#===========================================================================================================================
+
+
+def format_test_message_ks(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Колмогорова\-Смирнова*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 D\-статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+
+@router.callback_query(F.data.startswith("kstest_"))
+async def ks_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Двувыборочный тест Колмогорова-Смирнова - непараметрический тест для проверки соответствия распределению, в данном случае проверяет нулевую гипотезу о том что обе выборки пришли из одного и того де распределения")
+        await callback.message.answer("Может быть слабым в хвостах. В таком случае результат может быть завышенным. Попробуйте также тесты Лиллефорса, Крамера-фон-Мизеса и Андерсона-Дарлинга")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ks",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ks"))
+async def confirm_ks_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.ks_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_ks(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+
+#===========================================================================================================================
+# Shapiro-Wilk`s test
+#===========================================================================================================================
+
+def format_test_message_sw(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+        effect_control = result.get('effect_control', 0.0)
+        control_stat = result.get('control_stat', 0.0)
+        control_p = result.get('control_p', 1.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Шапиро\-Уилка*\n"
+            f"Были проверены обе группы\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"Нулевая гипотеза: данные соответствуют нормальному распределению\n\n"
+
+            f"*🧪 Статистика тестовой группы:* `{stat:.5f}`\n"
+            f"*📉 P\-значение тестовой группы:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*🧪 Статистика контрольной группы:* `{control_stat:.5f}`\n"
+            f"*📉 P\-значение контрольной группы:* `{control_p:.5f}`\n\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect_control)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("shapirowilketest_"))
+async def shapiro_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест Шапиро-Уилка - параметрический ранговый тест для проверки нормальности")
+        await callback.message.answer("Тест робастен к выбросам, обладает высокой мощностью")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_sw",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_sw"))
+async def confirm_sw_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.sw_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_sw(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+
+#===========================================================================================================================
+# Lilleforce`s test
+#===========================================================================================================================
+
+def format_test_message_ll(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+        effect_control = result.get('effect_control', 0.0)
+        control_stat = result.get('control_stat', 0.0)
+        control_p = result.get('control_p', 1.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты теста Лиллефорса*\n"
+            f"Были проверены обе группы\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"Нулевая гипотеза: данные соответствуют нормальному распределению\n\n"
+
+            f"*🧪 Статистика тестовой группы:* `{stat:.5f}`\n"
+            f"*📉 P\-значение тестовой группы:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*🧪 Статистика контрольной группы:* `{control_stat:.5f}`\n"
+            f"*📉 P\-значение контрольной группы:* `{control_p:.5f}`\n\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается. Данные не нормальны" if int(effect_control)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается. Данные нормальны"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("lilleforcetest_"))
+async def lilleforce_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Тест Лиллефорса - усиленный тест Колмогорова-Смрнова")
+        await callback.message.answer("В тесте не используются истинные параметры распределений")
+        await callback.message.answer("Тест не робастен к выбросам, в таком случае попробуйте интегральные признаки, или тест Шапиро-Уилка")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_ll",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_ll"))
+async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.ll_test(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_ll(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")

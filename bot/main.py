@@ -12,7 +12,7 @@ from app.handlers import admin_handlers
 from app.handlers import user_handlers
 from app.handlers import distribution_handlers
 from app.handlers import dataset_handlers
-
+from app.handlers import catcher
 
 from app.filters.IsAdmin import IsAdmin
 
@@ -26,7 +26,6 @@ if not BOT_TOKEN:
     logging.error("No token provided")
     raise ValueError("No token provided")
 
-ensure_topic_exists()
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 dp.message.middleware(ThrottlingMiddleware(limit=0.5))
@@ -40,6 +39,7 @@ dp.include_router(dataset_router)
 async def main():
     logging.info("Starting bot with long polling...")
     try:
+        await ensure_topic_exists()
         await dp.start_polling(bot)
     finally:
         logging.info("Shutting down bot...")

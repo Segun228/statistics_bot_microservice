@@ -231,7 +231,7 @@ def chi_2test(
         chi2_stat, p_value, dof, expected = stats.chi2_contingency(table)
 
 
-        warning = "Сhi-square should be used when the data is categorial only\n"
+        warning = "Сhi-square should be used when the data is categorial (for example gender), or represented by proportion metrics\n"
 
         result = {
             "n1": n1,
@@ -411,7 +411,7 @@ def u_test(
 
         result = stats.mannwhitneyu(test, control)
         stat, p_value = result.statistic, result.pvalue
-        warning = "Kramer`s test requires the distributions to be continuous\n"
+        warning = "U-test is not parametric, make sure that samples are big enough\n"
         if pearson_p < alpha:
             warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
         if spearman_p < alpha:
@@ -447,78 +447,78 @@ def lilleforce_test(
     filepath_or_buffer,
     test_column,
     control_column,
-    alpha,
-    beta,
-    related = False
+    alpha
 ):
     try:
-        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
-        test = df[test_column]
-        control = df[control_column]
-        if test.empty or control.empty:
-            raise ValueError("Error while extracting columns from the dataset")
+        import pandas as pd
+        import logging
+        from scipy import stats
+        from statsmodels.stats.diagnostic import lilliefors
 
-        n1 = len(test)
-        n2 = len(control)
+        df = pd.read_csv(filepath_or_buffer)
+        test = df[test_column].dropna()
+        control = df[control_column].dropna()
+
+        if test.empty or control.empty:
+            raise ValueError("Error: one or both samples are empty.")
+
+        n1, n2 = len(test), len(control)
         mean1, mean2 = test.mean(), control.mean()
         var1, var2 = test.var(ddof=1), control.var(ddof=1)
-        
-        pearson_obj = stats.pearsonr(test, control)
-        spearman_obj = stats.spearmanr(test, control)
 
-        pearson = pearson_obj[0]
-        spearman = spearman_obj[0]
 
-        pearson_p = pearson_obj[1]
-        spearman_p = spearman_obj[1]
+        pearson, pearson_p = stats.pearsonr(test, control)
+        spearman, spearman_p = stats.spearmanr(test, control)
 
-        from statsmodels.stats.diagnostic import lilliefors
-        result = lilliefors(test, dist='norm')
-        result_control = lilliefors(control, dist='norm')
-        stat, p_value = result[0], result[1]
-        control_stat = result_control[0]
-        control_p = result_control[1]
-        warning = "Lilliefors test can be sensitive to the outliers, try using Shapiro-Wilke test too\n"
-        if pearson_p < alpha:
-            warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
-        if spearman_p < alpha:
-            warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
-        if pearson_p >= alpha and spearman_p >= alpha:
-            warning += "Test and control appear independent\n"
-        if control_p < alpha:
-            warning += f"Control group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
-        else:
-            warning += f"Control group appears normal (CI {100*(1-alpha)}%)\n"
+        stat, p_value = lilliefors(test, dist='norm')
+        control_stat, control_p = lilliefors(control, dist='norm')
+
+        warning = "Lilliefors normality test results:\n"
 
         if p_value < alpha:
-            warning += f"Test group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
+            warning += f"Test group is NOT normal (p = {p_value:.3f})\n"
         else:
-            warning += f"Test group appears normal (CI {100*(1-alpha)}%)\n"
+            warning += f"Test group appears normal (p = {p_value:.3f})\n"
+
+        if control_p < alpha:
+            warning += f"Control group is NOT normal (p = {control_p:.3f})\n"
+        else:
+            warning += f"Control group appears normal (p = {control_p:.3f})\n"
+
+        if pearson_p < alpha:
+            warning += f"Pearson correlation suggests dependence (r = {pearson:.2f}, p = {pearson_p:.3f})\n"
+        if spearman_p < alpha:
+            warning += f"Spearman correlation suggests dependence (ρ = {spearman:.2f}, p = {spearman_p:.3f})\n"
+        if pearson_p >= alpha and spearman_p >= alpha:
+            warning += "Test and control appear independent\n"
+
+
         result = {
             "n1": n1,
             "n2": n2,
             "stat": stat,
-            "p": p_value,
-            "var_test":var1,
-            "var_control":var2,
-            "mean_test":mean1,
-            "mean_control":mean2,
-            "effect": 1 if p_value<alpha else 0,
-            "pearson":pearson,
-            "spearman":spearman,
-            "pearson_p":pearson_p,
-            "spearman_p":spearman_p,
+            "p": float(p_value),
+            "var_test": var1,
+            "var_control": var2,
+            "mean_test": mean1,
+            "mean_control": mean2,
+            "effect": int(p_value < alpha),
+            "effect_control": int(control_p < alpha),
+            "pearson": pearson,
+            "spearman": spearman,
+            "pearson_p": pearson_p,
+            "spearman_p": spearman_p,
             "control_stat": control_stat,
-            "control_p":control_p,
-            "warning":warning
+            "control_p": float(control_p),
+            "warning": warning
         }
 
         return Response(result), result
-    except Exception as e:
-        logging.error("Error while calculating")
-        logging.exception(e)
-        return HttpResponseBadRequest("Error while calculating", e.__str__()), None
 
+    except Exception as e:
+        logging.error("Error while calculating Lilliefors test")
+        logging.exception(e)
+        return HttpResponseBadRequest(f"Error while calculating: {e}"), None
 
 
 def shapwilk_test(
@@ -552,50 +552,50 @@ def shapwilk_test(
 
         result = stats.shapiro(test)
         result_control = stats.shapiro(control)
-        stat, p_value = result[0], result[1]
-        control_stat = result_control[0]
-        control_p = result_control[1]
-        warning = "Shapiro is not sensitive to outliers\n"
-        if pearson_p < alpha:
-            warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
-        if spearman_p < alpha:
-            warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
-        if pearson_p >= alpha and spearman_p >= alpha:
-            warning += "Test and control appear independent\n"
-        if control_p < alpha:
-            warning += f"Control group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
-        else:
-            warning += f"Control group appears normal (CI {100*(1-alpha)}%)\n"
 
-        if p_value < alpha:
-            warning += f"Test group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
+        stat = result.statistic
+        p_value = result.pvalue
+
+        control_stat = result_control.statistic
+        control_p = result_control.pvalue
+
+        warning = "Shapiro–Wilk normality test results:\n"
+        if control_p < alpha:
+            warning += f"Control group is NOT normal (p = {control_p:.3f})\n"
         else:
-            warning += f"Test group appears normal (CI {100*(1-alpha)}%)\n"
+            warning += f"Control group appears normal (p = {control_p:.3f})\n"
+
+        if pearson_p < alpha:
+            warning += f"Pearson correlation suggests dependence (r = {pearson:.2f}, p = {pearson_p:.3f})\n"
+        if spearman_p < alpha:
+            warning += f"Spearman correlation suggests dependence (ρ = {spearman:.2f}, p = {spearman_p:.3f})\n"
+
         result = {
             "n1": n1,
             "n2": n2,
             "stat": stat,
-            "p": p_value,
-            "var_test":var1,
-            "var_control":var2,
-            "mean_test":mean1,
-            "mean_control":mean2,
-            "effect": 1 if p_value<alpha else 0,
-            "pearson":pearson,
-            "spearman":spearman,
-            "pearson_p":pearson_p,
-            "spearman_p":spearman_p,
+            "p": float(p_value),
+            "var_test": var1,
+            "var_control": var2,
+            "mean_test": mean1,
+            "mean_control": mean2,
+            "effect": int(p_value < alpha),
+            "effect_control": int(control_p < alpha),
+            "pearson": pearson,
+            "spearman": spearman,
+            "pearson_p": pearson_p,
+            "spearman_p": spearman_p,
             "control_stat": control_stat,
-            "control_p":control_p,
-            "warning":warning
+            "control_p": float(control_p),
+            "warning": warning
         }
 
         return Response(result), result
+
     except Exception as e:
         logging.error("Error while calculating")
         logging.exception(e)
-        return HttpResponseBadRequest("Error while calculating", e.__str__()), None
-
+        return HttpResponseBadRequest(f"Error while calculating: {e}"), None
 
 def welch_test(
     filepath_or_buffer,
@@ -631,17 +631,13 @@ def welch_test(
         stat, p_value = result[0], result[1]
         control_stat = result_control[0]
         control_p = result_control[1]
-        warning = "Shapiro is not sensitive to outliers\n"
+        warning = "Welch test does not put any constraints on variances\n"
         if pearson_p < alpha:
             warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
         if spearman_p < alpha:
             warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
         if pearson_p >= alpha and spearman_p >= alpha:
             warning += "Test and control appear independent\n"
-        if control_p < alpha:
-            warning += f"Control group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
-        else:
-            warning += f"Control group appears normal (CI {100*(1-alpha)}%)\n"
 
         if p_value < alpha:
             warning += f"The differece is statistically important (CI {100*(1-alpha)}%)\n"
@@ -703,12 +699,24 @@ def anderson_darling_test(
         pearson_p = pearson_obj[1]
         spearman_p = spearman_obj[1]
 
-        from statsmodels.stats.diagnostic import lilliefors
         result = stats.anderson(test)
         result_control = stats.anderson(control)
-        stat, p_value = result[0], result[1]
-        control_stat = result_control[0]
-        control_p = result_control[1]
+        stat = result.statistic
+        control_stat = result_control.statistic
+
+        cv = result.critical_values
+        sl = result.significance_level
+        control_cv = result_control.critical_values
+        control_sl = result_control.significance_level
+
+        idx = next((i for i, s in enumerate(sl) if abs(s - alpha * 100) < 1e-2), None)
+        if idx is not None:
+            p_value = stat > cv[idx]
+            control_p = control_stat > control_cv[idx]
+        else:
+            p_value = None
+            control_p = None
+
         warning = "Anderson-Darling test can be sensitive to the outliers, try using Shapiro-Wilke test too\n"
         if pearson_p < alpha:
             warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
@@ -716,32 +724,33 @@ def anderson_darling_test(
             warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
         if pearson_p >= alpha and spearman_p >= alpha:
             warning += "Test and control appear independent\n"
-        if control_p < alpha:
+        if control_p:
             warning += f"Control group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
         else:
             warning += f"Control group appears normal (CI {100*(1-alpha)}%)\n"
-
-        if p_value < alpha:
+        if p_value:
             warning += f"Test group is NOT from normal distribution (CI {100*(1-alpha)}%)\n"
         else:
             warning += f"Test group appears normal (CI {100*(1-alpha)}%)\n"
+
         result = {
             "n1": n1,
             "n2": n2,
             "stat": stat,
-            "p": p_value,
-            "var_test":var1,
-            "var_control":var2,
-            "mean_test":mean1,
-            "mean_control":mean2,
-            "effect": 1 if p_value<alpha else 0,
-            "pearson":pearson,
-            "spearman":spearman,
-            "pearson_p":pearson_p,
-            "spearman_p":spearman_p,
+            "p": float(p_value) if p_value is not None else None,
+            "var_test": var1,
+            "var_control": var2,
+            "mean_test": mean1,
+            "mean_control": mean2,
+            "effect": 1 if p_value else 0,
+            "effect_control": 1 if control_p else 0,
+            "pearson": pearson,
+            "spearman": spearman,
+            "pearson_p": pearson_p,
+            "spearman_p": spearman_p,
             "control_stat": control_stat,
-            "control_p":control_p,
-            "warning":warning
+            "control_p": float(control_p) if control_p is not None else None,
+            "warning": warning
         }
 
         return Response(result), result
@@ -749,8 +758,6 @@ def anderson_darling_test(
         logging.error("Error while calculating")
         logging.exception(e)
         return HttpResponseBadRequest("Error while calculating", e.__str__()), None
-
-
 
 def anova(
     filepath_or_buffer,
@@ -930,6 +937,69 @@ def bootstrap(
             "mean_test":mean1,
             "mean_control":mean2,
             "effect": effect,
+            "pearson":pearson,
+            "spearman":spearman,
+            "pearson_p":pearson_p,
+            "spearman_p":spearman_p,
+            "warning":warning
+        }
+
+        return Response(result), result
+    except Exception as e:
+        logging.error("Error while calculating")
+        logging.exception(e)
+        return HttpResponseBadRequest("Error while calculating", e.__str__()), None
+
+
+def anderson_2sample_test(
+    filepath_or_buffer,
+    test_column,
+    control_column,
+    alpha,
+    beta,
+    related = False
+):
+    try:
+        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
+        test = df[test_column]
+        control = df[control_column]
+        if test.empty or control.empty:
+            raise ValueError("Error while extracting columns from the dataset")
+
+        n1 = len(test)
+        n2 = len(control)
+        mean1, mean2 = test.mean(), control.mean()
+        var1, var2 = test.var(ddof=1), control.var(ddof=1)
+        
+        pearson_obj = stats.pearsonr(test, control)
+        spearman_obj = stats.spearmanr(test, control)
+
+        pearson = pearson_obj[0]
+        spearman = spearman_obj[0]
+
+        pearson_p = pearson_obj[1]
+        spearman_p = spearman_obj[1]
+
+        result = stats.anderson_ksamp(test, control)
+        stat, p_value = result.statistic, result.pvalue
+        warning = "Anderson-Darling test can be sensitive to the outliers, try using non-parametric tests too, in case you have many outliers in your data\n"
+        if pearson_p < alpha:
+            warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
+        if spearman_p < alpha:
+            warning += f"Test and control may be dependent (Spearman={spearman:.2f})\n"
+        if pearson_p >= alpha and spearman_p >= alpha:
+            warning += "Test and control appear independent\n"
+
+        result = {
+            "n1": n1,
+            "n2": n2,
+            "stat": stat,
+            "p": p_value,
+            "var_test":var1,
+            "var_control":var2,
+            "mean_test":mean1,
+            "mean_control":mean2,
+            "effect": 1 if p_value<alpha else 0,
             "pearson":pearson,
             "spearman":spearman,
             "pearson_p":pearson_p,

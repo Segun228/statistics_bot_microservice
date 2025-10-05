@@ -20,6 +20,7 @@ urlpatterns = [
     path("lilliefors-test/<int:dataset_id>/", views.Lilleforce_test_View.as_view(), name="lilliefors_test"),
     path("shapiro-wilk-test/<int:dataset_id>/", views.Shap_Wilke_test_View.as_view(), name="shapiro_wilk_test"),
     path("anderson-darling-test/<int:dataset_id>/", views.Anderson_Darling_test_View.as_view(), name="anderson_darling_test"),
+    path("anderson-darling-2sample-test/<int:dataset_id>/", views.Anderson_Darling_2samle_test_View.as_view(), name="anderson_darling_2sample_test"),
 
     # Остальные
     path("anova/<int:dataset_id>/", views.ANOVA_View.as_view(), name="anova"),

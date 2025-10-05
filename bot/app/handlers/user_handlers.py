@@ -201,9 +201,71 @@ async def distribution_catalogue_callback_admin(callback: CallbackQuery):
         await callback.message.answer("Извините, не удалось загрузить распределение", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
 
 
+def escape_md(text: str) -> str:
+    """Экранирование специальных символов для MarkdownV2"""
+    if not text:
+        return ""
+    
+    escape_chars = '_*[]()~`>#+-=|{}.!'
+    result = []
+    for char in str(text):
+        if char in escape_chars:
+            result.append(f'\\{char}')
+        else:
+            result.append(char)
+    return ''.join(result)
 
 @router.callback_query(F.data.startswith("dataset_"))
 async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
+    try:
+        await callback.answer()
+        dataset_id = callback.data.split("_")[1]
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="callback",
+            source="menu",
+            payload=f"dataset_{dataset_id}"
+        )
+        current_dataset = await retrieve_dataset(telegram_id=callback.from_user.id, dataset_id=dataset_id)
+        if current_dataset is None:
+            await callback.message.answer("Извините, тут пока пусто, возвращаейтесь позже!", reply_markup= await get_distributions_catalogue(telegram_id=callback.from_user.id))
+            await callback.answer()
+            return
+        data = current_dataset
+
+
+        name = escape_md(data['name'])
+        alpha = escape_md(str(data['alpha']))
+        beta = escape_md(str(data['beta']))
+        test = escape_md(str(data['test']) or "Not set yet")
+        control = escape_md(str(data['control']) or "Not set yet")
+        length = escape_md(str(data['length']) or "Not set yet")
+
+
+        params = data['columns']
+        param_string = "\n"
+        for nam in params:
+            escaped_nam = escape_md(nam)
+            param_string += f"{escaped_nam}\n"
+        param_string += "\n"
+        
+        msg = (
+            f"*Name:* {name}\n\n"
+            f"*Columns:* {param_string}"
+            f"*Alpha:* {alpha}\n"
+            f"*Beta:* {beta}\n\n"
+            f"*Test group:* {test}\n"
+            f"*Controle group:* {control}\n\n"
+            f"*Final length:* {length}\n"
+        )
+        await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, не удалось загрузить датасет", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
+
+
+@router.callback_query(F.data.startswith("datasetfile_"))
+async def dataset_get_file(callback: CallbackQuery, bot:Bot):
     try:
         await callback.answer()
         dataset_id = callback.data.split("_")[1]
@@ -234,24 +296,38 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
         else:
             await callback.message.answer("Извините, не удалось загрузить датасет")
         data = current_dataset
+
+
+        name = escape_md(data['name'])
+        alpha = escape_md(str(data['alpha']))
+        beta = escape_md(str(data['beta']))
+        test = escape_md(str(data['test']) or "Not set yet")
+        control = escape_md(str(data['control']) or "Not set yet")
+        length = escape_md(str(data['length']) or "Not set yet")
+
+
         params = data['columns']
         param_string = "\n"
         for nam in params:
-            param_string += f"*{nam}*\n"
+            escaped_nam = escape_md(nam)
+            param_string += f"{escaped_nam}\n"
         param_string += "\n"
+        
         msg = (
-            f"*Name:* {data['name']}\n\n"
+            f"*Name:* {name}\n\n"
             f"*Columns:* {param_string}"
-            f"*Alpha:* {str(data['alpha']).replace(".", "\.")}\n"
-            f"*Beta:* {str(data['beta']).replace(".", "\.")}\n\n"
-            f"*Test group:* {str(data['test']).replace(".", "\.") or "Not set yet"}\n"
-            f"*Controle group:* {str(data['control']).replace(".", "\.") or "Not set yet"}\n\n"
-            f"*Final length:* {str(data['length']).replace(".", "\.") or "Not set yet"}\n"
+            f"*Alpha:* {alpha}\n"
+            f"*Beta:* {beta}\n\n"
+            f"*Test group:* {test}\n"
+            f"*Controle group:* {control}\n\n"
+            f"*Final length:* {length}\n"
         )
         await callback.message.answer(msg, parse_mode="MarkdownV2", reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id = dataset_id))
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, не удалось загрузить датасет", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
+
+
 
 #===========================================================================================================================
 # Создание распределения

@@ -22,8 +22,8 @@ async def get_confirm_menu(
     dataset_id = None
 ):
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(InlineKeyboardButton(text="Подтвердить", callback_data="confirm_ztest"))
-    keyboard.add(InlineKeyboardButton(text="Отмена", callback_data=f"dataset_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Подтвердить", callback_data=true_callback))
+    keyboard.add(InlineKeyboardButton(text="Отмена", callback_data=false_callback))
     return keyboard.adjust(1).as_markup()
 
 
@@ -56,6 +56,7 @@ async def get_dataset_criteria_menu(dataset_id):
     keyboard.add(InlineKeyboardButton(text="U - test", callback_data=f"utest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Welch’s t-test", callback_data=f"welchtest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Anderson-Darling test", callback_data=f"andersondarlingtest_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Anderson-Darling 2-sample test", callback_data=f"andersondarling2sampletest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Cramer test", callback_data=f"cramertest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="KS two-sample test", callback_data=f"kstest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Shapiro-Wilke test", callback_data=f"shapirowilketest_{dataset_id}"))
