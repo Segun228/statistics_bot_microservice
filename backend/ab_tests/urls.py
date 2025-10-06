@@ -26,4 +26,5 @@ urlpatterns = [
     path("anova/<int:dataset_id>/", views.ANOVA_View.as_view(), name="anova"),
     path("bootstrap/<int:dataset_id>/", views.Bootstrap_View.as_view(), name="bootstrap"),
     path("cuped/<int:dataset_id>/", views.Cuped_View.as_view(), name="cuped"),
+    path("cupac/<int:dataset_id>/", views.Cupac_View.as_view(), name="cupac"),
 ]

@@ -21,12 +21,13 @@ from app.keyboards import inline_user as inline_user_keyboards
 
 from app.keyboards import inline_dataset as inline_keyboards
 
-from app.states.states import Send, File, Distribution, Dataset, DistributionEdit, DatasetEdit, Errors, Groups, Confirm
+from app.states.states import Errors, Groups, Confirm, Bootstrap, Cuped, Cupac
 
-from aiogram.types import BufferedInputFile
+import pandas as pd
+import numpy as np
 
 
-from app.keyboards.inline_user import get_datasets_catalogue, get_distributions_catalogue
+from app.keyboards.inline_user import  get_distributions_catalogue
 
 from app.filters.IsAdmin import IsAdmin
 
@@ -113,6 +114,17 @@ async def get_datasets_ab_criteria_menu(callback: CallbackQuery):
     try:
         dataset_id = int(callback.data.split("_")[2])
         await callback.message.answer("Выберите необходимый алгоритм", reply_markup=await inline_keyboards.get_dataset_criteria_menu(dataset_id=dataset_id))
+    except Exception as e:
+        logging.error("An error occured")
+        logging.exception(e)
+        await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+
+
+@router.callback_query(F.data.startswith("precision_menu_"))
+async def get_datasets_precision_criteria_menu(callback: CallbackQuery):
+    try:
+        dataset_id = int(callback.data.split("_")[2])
+        await callback.message.answer("Выберите необходимый метод повышения точноти", reply_markup=await inline_keyboards.get_dataset_criteria_menu(dataset_id=dataset_id))
     except Exception as e:
         logging.error("An error occured")
         logging.exception(e)
@@ -207,6 +219,7 @@ async def set_control_group(message:Message, state:FSMContext):
         await message.answer("Извините, не удалось установить группы, попробуйте позже")
 
 
+
 @router.message(Groups.controle)
 async def set_end_group(message:Message, state:FSMContext):
     try:
@@ -296,6 +309,7 @@ def format_mde_message(result):
 @router.message(SampleSize.mde)
 async def count_n_end(message: Message, state: FSMContext):
     try:
+        message.answer("Запускаю рассчет...")
         mde = float(message.text)
         if not mde:
             raise ValueError("Invalid MDE given")
@@ -333,6 +347,7 @@ async def count_n_end(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("count_mde"))
 async def count_mde_start(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         await state.clear()
         dataset_id = callback.data.split("_")[2]
         await callback.message.answer("Уже считаю, подождите немного...")
@@ -438,6 +453,7 @@ async def ztest_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ztest"))
 async def ztest_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.z_test(
@@ -544,6 +560,7 @@ async def ttest_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ttest"))
 async def ttest_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.t_test(
@@ -647,6 +664,7 @@ async def chi2test_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_chi2test"))
 async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.chi2_test(
@@ -753,6 +771,7 @@ async def utest_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_utest"))
 async def confirm_u_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.u_test(
@@ -857,6 +876,7 @@ async def welchtest_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_welch"))
 async def confirm_welch_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.welch_test(
@@ -972,6 +992,7 @@ async def andersondarlingtest_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ad"))
 async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.ad_test(
@@ -1078,6 +1099,7 @@ async def cramer_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_cramer"))
 async def confirm_cramer_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.cramer_test(
@@ -1183,6 +1205,7 @@ async def ad2_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ad2"))
 async def confirm_ad2_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.cramer_test(
@@ -1288,6 +1311,7 @@ async def ks_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ks"))
 async def confirm_ks_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.ks_test(
@@ -1403,6 +1427,7 @@ async def shapiro_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_sw"))
 async def confirm_sw_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.sw_test(
@@ -1519,6 +1544,7 @@ async def lilleforce_start(callback: CallbackQuery, state:FSMContext):
 @router.callback_query(F.data.startswith("confirm_ll"))
 async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
     try:
+        callback.message.answer("Запускаю рассчет...")
         data = await state.get_data()
         dataset_id = data.get("id")
         response = await stats_handlers.ll_test(
@@ -1539,3 +1565,491 @@ async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+#===========================================================================================================================
+# Bootstrap
+#===========================================================================================================================
+
+def format_test_message_bootstrap(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+        ci = result.get('ci', '?')
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        t = result.get('z', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+        iterations = result.get('iterations', '10000')
+        text = (
+            f"*📊 Результаты бутстрепа*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🚴 Итерации:* `{iterations}`\n"
+            f"*🧪 Доверительный интервал:* от `{ci[0]:.5f}` до `{ci[1]:.5f}`\n"
+            f"*📐 Эффект:* `{"Ноль не принадлежит CI. Найдено статистически значимое различие. Нулевая гипотеза отвергается" if effect==True else "Ноль принадлежит CI. Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("bootstraptest_"))
+async def bootstrap_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("Бутстреп имеет ограничения")
+        await callback.message.answer("Для корректности теста необходимо, чтобы при рассчете выборки были независимымы и репрезентативными")
+        await callback.message.answer("Это довольно дорогая операция, так что время ожидания может быть дольше чем обычно")
+        await callback.message.answer("По умолчанию количество итераций семплирования равно 10000,вы можете увеличить это число, но учтите, что сервер может не справиться. Вы хотите ввести собственное число итераций?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "enter_number_{dataset_id}",
+            false_callback = f"confirm_bootstrap_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_bootstrap"))
+async def bootstrap_short_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.bootstrap(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+            iterations = 10000
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_bootstrap(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("enter_number_"))
+async def bootstrap_select_number(callback: CallbackQuery, state:FSMContext):
+    await callback.message.answer("Введите желаемое число итераций для бутстрепа (не рекомендуем брать меньше 10000)")
+    await state.set_state(Bootstrap.iterations)
+
+
+@router.message(Bootstrap.iterations)
+async def long_bootstrap_finish(message:Message, state:FSMContext):
+    try:
+        iterations = int(message.text)
+        if not iterations:
+            iterations = 10000
+            message.answer("Извините, не удалось установить кастомное значение, возвращаю дефолтные 10000")
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        await message.answer("Запускаю рассчет...")
+        response = await stats_handlers.bootstrap(
+            telegram_id=message.from_user.id,
+            id=dataset_id,
+            iterations = iterations
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await message.answer(
+            format_test_message_bootstrap(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+#===========================================================================================================================
+# ANOVA
+#===========================================================================================================================
+
+def format_test_message_anova(response):
+    try:
+        result = response
+        if type(result) is json or type(result) is str:
+            result = json.loads(result)
+        n1 = result.get('n1', '?')
+        n2 = result.get('n2', '?')
+
+        mean_control = result.get('mean_control', 0.0)
+        mean_test = result.get('mean_test', 0.0)
+
+        var_control = result.get('var_control', 0.0)
+        var_test = result.get('var_test', 0.0)
+
+        stat = result.get('stat', 0.0)
+        p = result.get('p', 1.0)
+        effect = result.get('effect', 0.0)
+
+        pearson = result.get('pearson', 0.0)
+        pearson_p = result.get('pearson_p', 1.0)
+
+        spearman = result.get('spearman', 0.0)
+        spearman_p = result.get('spearman_p', 1.0)
+
+        warning = result.get('warning', '—')
+
+        text = (
+            f"*📊 Результаты ANOVA*\n\n"
+            f"*👥 Размеры групп:*\n"
+            f"Контроль: `{escape_md_v2(n1)}`\n"
+            f"Тест: `{escape_md_v2(n2)}`\n\n"
+
+            f"*📈 Средние значения:*\n"
+            f"Контроль: `{mean_control:.2f}`\n"
+            f"Тест: `{mean_test:.2f}`\n\n"
+
+            f"*📊 Дисперсии:*\n"
+            f"Контроль: `{var_control:.2f}`\n"
+            f"Тест: `{var_test:.2f}`\n\n"
+
+            f"*🧪 F\-статистика:* `{stat:.5f}`\n"
+            f"*📉 P\-значение:* `{p:.5f}`\n"
+            f"*📐 Эффект:* `{"Найдено статистически значимое различие. Нулевая гипотеза отвергается" if int(effect)==1 else "Статистически значимого различия не найдено. Нулевая гипотеза не отвергается"}`\n\n"
+
+            f"*📉 Корреляции:*\n"
+            f"Пирсон: `{pearson:.3f}` \(p\-value \= `{pearson_p:.5f}`\)\n"
+            f"Спирмен: `{spearman:.3f}` \(p\-value \= `{spearman_p:.5f}`\)\n\n"
+
+            f"*⚠️ Предупреждение:*\n"
+            f"{escape_md_v2(warning)}"
+        )
+        return text
+    except Exception as e:
+        logging.error(e)
+        raise
+
+
+@router.callback_query(F.data.startswith("anovatest_"))
+async def anova_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("ANOVA - непараметрический тест, сравнивает средние посредством сравнения дисперсий")
+        await callback.message.answer("Данные должны быть независимыми, дисперсии гомогенными")
+        await callback.message.answer("В тест встроен анализ дисперсий посредством теста Левана, в случае гетерогенности дисперсий вы получите соответствующее предупреждение")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_anova",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_anova"))
+async def confirm_confirm_anova_end(callback: CallbackQuery, state:FSMContext):
+    try:
+        callback.message.answer("Запускаю рассчет...")
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        response = await stats_handlers.anova(
+            telegram_id=callback.from_user.id,
+            id=dataset_id,
+        )
+        if not response:
+            raise ValueError("An error occurred during calculation")
+
+        result = response if isinstance(response, dict) else json.loads(response.data)
+
+        await callback.message.answer(
+            format_test_message_anova(response = result),
+            parse_mode="MarkdownV2",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+
+#===========================================================================================================================
+# CUPED
+#===========================================================================================================================
+
+
+@router.callback_query(F.data.startswith("cuped_"))
+async def cuped_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("CUPED - метод повышения точности, базируясь на исторической вариации переменной")
+        await callback.message.answer("Вам будет необходимо выбрать ту колонку, которую вы хотите выбрать в качестве ковариаты")
+        await callback.message.answer("Данные будут изменены, вернуть их не будет представляться возможным")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_cuped_{dataset_id}",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+@router.callback_query(F.data.startswith("confirm_cuped_"))
+async def ask_history_file(callback: CallbackQuery, state: FSMContext):
+    try:
+        dataset_id = callback.data.split("_")[2]
+        await state.update_data(id=dataset_id)
+        await state.set_state(Cuped.waiting_for_history_file)
+
+        await callback.message.answer("Пожалуйста, загрузите CSV-файл с историческими данными.\nОн должен содержать колонку, которую вы хотите использовать как ковариату.")
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.")
+
+
+
+@router.message(Cuped.waiting_for_history_file, F.document)
+async def receive_history_file(message: Message, state: FSMContext):
+    try:
+        document = message.document
+        if not document.file_name.endswith(".csv"):
+            await message.answer("Пожалуйста, загрузите CSV-файл.")
+            return
+
+        await state.update_data(history_file_id=document.file_id)
+
+        file_info = await message.bot.get_file(document.file_id)
+        file_bytes = await message.bot.download_file(file_info.file_path)
+
+        df = pd.read_csv(BytesIO(file_bytes.read()))
+        columns = df.columns.tolist()
+
+        await message.answer(
+            "Какую колонку вы хотите выбрать в качестве исторической ковариаты?",
+            reply_markup=create_reply_column_keyboard_group(columns=columns)
+        )
+        await state.set_state(Cuped.select_history_column)
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка при обработке файла. Попробуйте снова.")
+
+
+@router.message(Cuped.select_history_column)
+async def finish_cuped(message: Message, state: FSMContext):
+    try:
+        history_col = message.text
+        data = await state.get_data()
+        dataset_id = data.get("id")
+        file_id = data.get("history_file_id")
+
+        if not file_id:
+            raise ValueError("Не удалось получить файл с историческими данными")
+
+
+        file_info = await message.bot.get_file(file_id)
+        file_bytes = await message.bot.download_file(file_info.file_path)
+
+
+        history_df = pd.read_csv(BytesIO(file_bytes.getvalue()))
+        if history_col not in history_df.columns:
+            await message.answer("Колонка не найдена в файле. Пожалуйста, выберите одну из предложенных.")
+            return
+
+        response = await stats_handlers.cuped(
+            telegram_id=message.from_user.id,
+            id=dataset_id,
+            history_column=history_col,
+            history_df=history_df
+        )
+
+        if not response:
+            raise ValueError("Ошибка при выполнении CUPED")
+
+        await message.answer(
+            "Данные успешно изменены!",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=dataset_id)
+        )
+        await state.clear()
+
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Извините, произошла ошибка, попробуйте позже.")
+
+
+
+#===========================================================================================================================
+# CUPAC
+#===========================================================================================================================
+
+
+
+@router.callback_query(F.data.startswith("cupac_"))
+async def cupac_start(callback: CallbackQuery, state:FSMContext):
+    try:
+        await state.clear()
+        dataset_id = callback.data.split("_")[1]
+        await state.update_data(id = dataset_id)
+        await state.set_state(Confirm.bundle)
+        await callback.message.answer("CUPAC - Controlled-experiment Using Prediction As Covariate")
+        await callback.message.answer("Мощный метод по повышения качества выборок")
+        await callback.message.answer("В методе используется регрессионная модель. Вам будет необходимо указать на каких колонках мы будем учить модель. Убедитесь что эти колонки есть как в историческом датафрейме, так и в текущем датасете с тестом и контролем")
+        await callback.message.answer("Откатить результаты будет невозможно")
+        await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
+            true_callback = "confirm_cupac_{dataset_id}",
+            false_callback = f"dataset_{dataset_id}"
+        ))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+
+
+@router.callback_query(F.data.startswith("confirm_cupac_"))
+async def ask_history_file_cupac(callback: CallbackQuery, state: FSMContext):
+    try:
+        dataset_id = callback.data.split("_")[2]
+        await state.update_data(id=dataset_id)
+        await state.set_state(Cupac.waiting_for_history_file)
+
+        await callback.message.answer(
+            "Пожалуйста, загрузите CSV-файл с историческими данными.\nОн должен содержать целевую метрику и фичи для обучения модели."
+        )
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.")
+
+@router.message(Cupac.waiting_for_history_file, F.document)
+async def receive_history_file_cupac(message: Message, state: FSMContext):
+    try:
+        document = message.document
+        if not document.file_name.endswith(".csv"):
+            await message.answer("Пожалуйста, загрузите CSV-файл.")
+            return
+
+        await state.update_data(history_file_id=document.file_id)
+
+        file_info = await message.bot.get_file(document.file_id)
+        file_bytes = await message.bot.download_file(file_info.file_path)
+
+        df = pd.read_csv(BytesIO(file_bytes.read()))
+        columns = df.columns.tolist()
+
+        await state.update_data(columns=columns)
+
+        await message.answer(
+            "Выберите колонку, которую будем предсказывать (целевую метрику)",
+            reply_markup=create_reply_column_keyboard_group(columns)
+        )
+        await state.set_state(Cupac.select_target_metric)
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка при обработке файла.")
+
+
+@router.message(Cupac.select_target_metric)
+async def receive_target_metric(message: Message, state: FSMContext):
+    try:
+        metric = message.text
+        data = await state.get_data()
+        if metric not in data["columns"]:
+            await message.answer("Колонка не найдена. Выберите из предложенных.")
+            return
+
+        await state.update_data(target_metric=metric)
+
+        await message.answer(
+            "Теперь выберите одну или несколько колонок, которые будем использовать как признаки.\nМожно ввести через запятую или пробел.",
+            reply_markup=None
+        )
+        await state.set_state(Cupac.select_feature_columns)
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка при выборе метрики.")
+
+
+@router.message(Cupac.select_feature_columns)
+async def finish_cupac(message: Message, state: FSMContext):
+    try:
+        feature_cols = [col.strip() for col in message.text.replace(",", " ").split()]
+        data = await state.get_data()
+        all_columns = data.get("columns", [])
+        invalid = [c for c in feature_cols if c not in all_columns]
+
+        if invalid:
+            await message.answer(f"Некорректные колонки: {', '.join(invalid)}")
+            return
+
+        file_id = data["history_file_id"]
+        file_info = await message.bot.get_file(file_id)
+        file_bytes = await message.bot.download_file(file_info.file_path)
+        df = pd.read_csv(BytesIO(file_bytes.getvalue()))
+
+        response = await stats_handlers.cupac(
+            telegram_id=message.from_user.id,
+            id=data["id"],
+            feature_columns=feature_cols,
+            target_metric=data["target_metric"],
+            history_df=df
+        )
+
+        if not response:
+            raise ValueError("Ошибка при CUPAC")
+
+        await message.answer(
+            "Данные успешно изменены!",
+            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=data["id"])
+        )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Произошла ошибка при выполнении CUPAC.")
+
+
+
+
+
+

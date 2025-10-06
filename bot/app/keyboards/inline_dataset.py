@@ -35,6 +35,15 @@ async def get_dataset_ab_menu(dataset_id):
     keyboard.add(InlineKeyboardButton(text="Рассчитать N", callback_data=f"count_n_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Рассчитать MDE", callback_data=f"count_mde_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Очистить данные", callback_data=f"clear_dataset_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Повышение точности", callback_data=f"precision_menu_{dataset_id}"))
+    keyboard.add(InlineKeyboardButton(text="Назад", callback_data=f"dataset_{dataset_id}"))
+    return keyboard.adjust(1).as_markup()
+
+
+async def get_precision_menu(dataset_id):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="CUPED", callback_data=f"cuped_{dataset_id}"))    
+    keyboard.add(InlineKeyboardButton(text="CUPAC", callback_data=f"cupac_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Назад", callback_data=f"dataset_{dataset_id}"))
     return keyboard.adjust(1).as_markup()
 
@@ -63,6 +72,6 @@ async def get_dataset_criteria_menu(dataset_id):
     keyboard.add(InlineKeyboardButton(text="Lilleforce test", callback_data=f"lilleforcetest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="Bootstrap", callback_data=f"bootstraptest_{dataset_id}"))
     keyboard.add(InlineKeyboardButton(text="ANOVA", callback_data=f"anovatest_{dataset_id}"))
-    keyboard.add(InlineKeyboardButton(text="CUPED", callback_data=f"cuped_{dataset_id}"))
+    
     keyboard.add(InlineKeyboardButton(text="Назад", callback_data=f"ab_tests_{dataset_id}"))
     return keyboard.adjust(1).as_markup()

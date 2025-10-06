@@ -81,3 +81,20 @@ class SampleSize(StatesGroup):
 class Confirm(StatesGroup):
     bundle = State()
     confirmed = State()
+
+
+class Bootstrap(StatesGroup):
+    iterations = State()
+    confirmed = State()
+
+
+class Cuped(StatesGroup):
+    hostory_col = State()
+    waiting_for_history_file = State()
+    select_history_column = State()
+
+
+class Cupac(StatesGroup):
+    waiting_for_history_file = State()
+    select_target_metric = State()
+    select_feature_columns = State()

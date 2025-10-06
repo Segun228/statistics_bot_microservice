@@ -10,6 +10,11 @@ import os
 from rest_framework.response import Response
 from django.http.response import HttpResponseBadRequest
 from math import sqrt
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import cross_val_score
 
 
 def count_mde(
@@ -796,7 +801,7 @@ def anova(
             result = stats.f_oneway(test, control)
             stat, p_value = result[0], result[1]
         else:
-            warning += "The distributions have geterogenic variances, you should not use ANOVA then"
+            warning += "❗️❗️❗️The distributions have geterogenic variances, you should not use ANOVA then"
             stat, p_value = 0, 1
         if pearson_p < alpha:
             warning += f"Test and control may be dependent (Pearson={pearson:.2f})\n"
@@ -886,6 +891,9 @@ def bootstrap(
     related = False
 ):
     try:
+        iterations = int(iterations)
+        if not iterations:
+            iterations = 10000
         df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
         test = df[test_column]
         control = df[control_column]
@@ -941,7 +949,8 @@ def bootstrap(
             "spearman":spearman,
             "pearson_p":pearson_p,
             "spearman_p":spearman_p,
-            "warning":warning
+            "warning":warning,
+            "iterations":iterations
         }
 
         return Response(result), result
@@ -1012,3 +1021,70 @@ def anderson_2sample_test(
         logging.error("Error while calculating")
         logging.exception(e)
         return HttpResponseBadRequest("Error while calculating", e.__str__()), None
+
+
+def cupac(
+    filepath_or_buffer,
+    test_column,
+    control_column,
+    history_buf,
+    feature_columns,
+    target_metric_column,
+    alpha,
+    beta,
+):
+    try:
+        history_df = pd.read_csv(history_buf)
+        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
+        test = df[test_column]
+        control = df[control_column]
+        if all(col in history_df.columns for col in feature_columns) and all(col in df.columns for col in feature_columns) and target_metric_column in history_df.columns:
+            feature_df = history_df[feature_columns]
+            target_metric_df = history_df[target_metric_column]
+        else:
+            raise Exception("Missing required arguments")
+
+        degrees = range(1, 10)
+        scores = []
+
+        for d in degrees:
+            model = make_pipeline(PolynomialFeatures(degree=d), LinearRegression())
+            score = cross_val_score(model, feature_df, target_metric_df, cv=5, scoring='neg_mean_squared_error')
+            scores.append(-score.mean())
+
+        k = 1
+        min_score = scores[0]
+        for ind, score in enumerate(scores):
+            if score < min_score:
+                min_score = score
+                k = ind + 1
+
+        model = make_pipeline(PolynomialFeatures(degree=k), LinearRegression())
+        model.fit(feature_df, target_metric_df)
+
+        hist_series = pd.Series(model.predict(
+            pd.concat((test, control), axis=0)[feature_columns]
+        ))
+
+        if hist_series is None or hist_series.empty:
+            raise ValueError("Ковариационная колонка пуста")
+        if test.empty or control.empty:
+            raise ValueError("Error while extracting columns from the dataset")
+
+        theta = np.cov(pd.concat((test, control), axis=0), hist_series)[0, 1]/np.var(hist_series, ddof=1)
+        if len(test) != len(control) or len(control) != len(hist_series):
+            min_length = min(len(control), len(test), len(hist_series))
+            test = test.iloc[:min_length]
+            control = control.iloc[:min_length]
+            hist_series = hist_series.iloc[:min_length]
+            df = df.iloc[:min_length]
+        hist_mean = hist_series.mean()
+        test_cuped = test - theta*(hist_series - hist_mean)
+        control_cuped = control - theta*(hist_series - hist_mean)
+        df[test_column] = test_cuped
+        df[control_column] = control_cuped
+        return df
+    except Exception as e:
+        logging.error("Error while calculating")
+        logging.exception(e)
+        return None
