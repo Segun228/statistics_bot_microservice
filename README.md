@@ -1,12 +1,105 @@
 
 # 📊 StatBot AI - Платформа для статистического анализа и A/B тестирования
 
-![Python](https://img.shields.io/badge/Python-3.12-blue)
-![Django](https://img.shields.io/badge/Django-4.2-green)
-![Aiogram](https://img.shields.io/badge/Aiogram-3.21-blue)
-![Microservices](https://img.shields.io/badge/Architecture-Microservices-orange)
+## 🎯 **Основные возможности**
 
-**StatBot AI** - это мощная платформа для статистического анализа данных через Telegram бота. Загружайте датасеты, проводите A/B тесты, строите модели машинного обучения и визуализируйте результаты в реальном времени! 🚀
+### 📊 **Статистический анализ**
+![A/B Testing](https://img.shields.io/badge/A/B_Testing-15+_Methods-FF6B6B?style=for-the-badge&logo=databricks)
+![Statistical Tests](https://img.shields.io/badge/Statistical_Tests-Normality_Homogeneity-4ECDC4?style=for-the-badge&logo=science)
+![Confidence Intervals](https://img.shields.io/badge/Confidence_Intervals-Power_Analysis-45B7D1?style=for-the-badge&logo=chart-line)
+![Data Visualization](https://img.shields.io/badge/Data_Visualization-Matplotlib_Seaborn-F7B731?style=for-the-badge&logo=chart-bar)
+
+### 🤖 **Машинное обучение**
+![Machine Learning](https://img.shields.io/badge/ML-Classification_Regression-8E44AD?style=for-the-badge&logo=ai)
+![Data Preprocessing](https://img.shields.io/badge/Data_Preprocessing-Scikit_learn-3498DB?style=for-the-badge&logo=python)
+![Cross Validation](https://img.shields.io/badge/Cross_Validation-Hyperparameter_Tuning-E74C3C?style=for-the-badge&logo=git-compare)
+![Model Metrics](https://img.shields.io/badge/Model_Metrics-Accuracy_Precision_Recall-27AE60?style=for-the-badge&logo=chart-line)
+
+### 📈 **Визуализация и отчетность**
+![Real-time Dashboards](https://img.shields.io/badge/Real_time-Grafana_Dashboards-F46800?style=for-the-badge&logo=grafana)
+![Export Reports](https://img.shields.io/badge/Export-PDF_CSV_Excel-2ECC71?style=for-the-badge&logo=file-export)
+![Interactive Reports](https://img.shields.io/badge/Interactive-Reports-9B59B6?style=for-the-badge&logo=chart-pie)
+
+### ⚡ **Производительность и масштабируемость**
+![Microservices](https://img.shields.io/badge/Microservices-Architecture-FF6B6B?style=for-the-badge&logo=server)
+![Async Processing](https://img.shields.io/badge/Async-Processing-4ECDC4?style=for-the-badge&logo=lightning)
+![Redis Cache](https://img.shields.io/badge/Redis-Caching-DC382D?style=for-the-badge&logo=redis)
+![Kafka Streams](https://img.shields.io/badge/Kafka-Stream_Processing-231F20?style=for-the-badge&logo=apachekafka)
+
+## 🏗️ **Архитектурные компоненты**
+
+### 🔄 **Data Pipeline**
+![Data Pipeline](https://img.shields.io/badge/Data_Pipeline-Telegram→Django→Kafka→ClickHouse-FF6B6B?style=for-the-badge&logo=apachekafka)
+![Real-time Analytics](https://img.shields.io/badge/Real_time-Analytics-4ECDC4?style=for-the-badge&logo=clock)
+![Event Streaming](https://img.shields.io/badge/Event_Streaming-Kafka_Connect-45B7D1?style=for-the-badge&logo=apachekafka)
+
+### 🗄️ **Базы данных и хранилища**
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Transactional_Data-336791?style=for-the-badge&logo=postgresql)
+![ClickHouse](https://img.shields.io/badge/ClickHouse-Analytical_OLAP-FF6B00?style=for-the-badge&logo=clickhouse)
+![Redis Cache](https://img.shields.io/badge/Redis-Sessions_Cache-DC382D?style=for-the-badge&logo=redis)
+
+### 📊 **Мониторинг и визуализация**
+![Grafana](https://img.shields.io/badge/Grafana-Dashboards_F9A828?style=for-the-badge&logo=grafana)
+![Prometheus](https://img.shields.io/badge/Prometheus-Metrics_E45A5A?style=for-the-badge&logo=prometheus)
+![Metrics Collection](https://img.shields.io/badge/Metrics-Real_time_Collection-27AE60?style=for-the-badge&logo=chart-line)
+
+## 🔧 **Технические спецификации**
+
+### 🐍 **Python экосистема**
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python)
+![Django 4.2](https://img.shields.io/badge/Django-4.2-092E20?style=for-the-badge&logo=django)
+![DRF 3.16](https://img.shields.io/badge/DRF-3.16-800000?style=for-the-badge&logo=django)
+![Pandas 2.3](https://img.shields.io/badge/Pandas-2.3-150458?style=for-the-badge&logo=pandas)
+![Scikit-learn](https://img.shields.io/badge/Scikit_learn-ML_Models-F7931E?style=for-the-badge&logo=scikitlearn)
+
+### 🔌 **Интеграции и API**
+![REST API](https://img.shields.io/badge/REST_API-OpenAPI_Spectacular-FF6C37?style=for-the-badge&logo=rest)
+![JWT Auth](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens)
+![Telegram Bot](https://img.shields.io/badge/Telegram_Bot-Aiogram_3.21-26A5E4?style=for-the-badge&logo=telegram)
+
+### 🐳 **Инфраструктура**
+![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?style=for-the-badge&logo=docker)
+![Docker Compose](https://img.shields.io/badge/Docker_Compose-Orchestration-2496ED?style=for-the-badge&logo=docker)
+![Gunicorn](https://img.shields.io/badge/Gunicorn-WSGI_Server-499848?style=for-the-badge&logo=gunicorn)
+
+## 📈 **Аналитические возможности**
+
+### 🔬 **Статистические тесты**
+![T-Tests](https://img.shields.io/badge/T_Tests-Student_Welch-FF6B6B?style=for-the-badge&logo=calculator)
+![ANOVA](https://img.shields.io/badge/ANOVA-Variance_Analysis-4ECDC4?style=for-the-badge&logo=chart-bar)
+![Chi-square](https://img.shields.io/badge/Chi_square-Independence_Test-45B7D1?style=for-the-badge&logo=mathematics)
+![Non-parametric](https://img.shields.io/badge/Non_parametric-Mann_Whitney_Wilcoxon-F7B731?style=for-the-badge&logo=function)
+
+### 📉 **Визуализация данных**
+![Distribution Plots](https://img.shields.io/badge/Distribution_Plots-Histogram_KDE-8E44AD?style=for-the-badge&logo=chart-area)
+![Correlation Analysis](https://img.shields.io/badge/Correlation-Heatmaps_Matrix-3498DB?style=for-the-badge&logo=chart-line)
+![Time Series](https://img.shields.io/badge/Time_Series-Trend_Analysis-E74C3C?style=for-the-badge&logo=clock)
+
+## 🚀 **Производительность**
+
+### ⚡ **Обработка данных**
+![Batch Processing](https://img.shields.io/badge/Batch_Processing-Pandas_Numpy-27AE60?style=for-the-badge&logo=server)
+![Stream Processing](https://img.shields.io/badge/Stream_Processing-Kafka_Consumer-F46800?style=for-the-badge&logo=apachekafka)
+![Parallel Computing](https://img.shields.io/badge/Parallel-Async_Await-9B59B6?style=for-the-badge&logo=lightning)
+
+### 🔒 **Безопасность и надежность**
+![JWT Tokens](https://img.shields.io/badge/JWT-Secure_Auth-000000?style=for-the-badge&logo=jsonwebtokens)
+![API Rate Limiting](https://img.shields.io/badge/Rate_Limiting-Redis_Backed-DC382D?style=for-the-badge&logo=speedometer)
+![Data Validation](https://img.shields.io/badge/Data_Validation-Pydantic_2.11-00BFFF?style=for-the-badge&logo=check-circle)
+
+## 🎨 **Интерфейсы**
+
+### 🤖 **Telegram Bot**
+![Bot Commands](https://img.shields.io/badge/Bot_Commands-/start_/analyze_/report-26A5E4?style=for-the-badge&logo=telegram)
+![Inline Keyboards](https://img.shields.io/badge/Inline_Keyboards-Interactive_Menus-26A5E4?style=for-the-badge&logo=telegram)
+![FSM States](https://img.shields.io/badge/FSM_States-User_Workflow-26A5E4?style=for-the-badge&logo=finite-state-machine)
+
+### 🌐 **Web интерфейсы**
+![Admin Panel](https://img.shields.io/badge/Admin_Panel-Django_Admin-092E20?style=for-the-badge&logo=django)
+![REST API](https://img.shields.io/badge/API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger)
+![Grafana Dashboards](https://img.shields.io/badge/Dashboards-Grafana_F9A828?style=for-the-badge&logo=grafana)
+
+---
 
 ## 🌟 Основные возможности
 
