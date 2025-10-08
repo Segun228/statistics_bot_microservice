@@ -1,4 +1,5 @@
 import logging
+import re
 from rest_framework.views import exception_handler as drf_exception_handler
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -711,6 +712,14 @@ class Welch_test_View(AuthenticatedAPIView, APIView):
             local_exception_handler(e)
 
 
+
+def rewrite_supabase_url_to_root(upload_url: str) -> str:
+    filename = upload_url.rstrip("/").split("/")[-1]
+    pattern = r"(https://[^/]+/storage/v1/object)/public/([^/]+)/.+"
+    replacement = r"\1/\2/" + filename
+    clean_url = re.sub(pattern, replacement, upload_url)
+    return clean_url
+
 class Anderson_Darling_test_View(AuthenticatedAPIView, APIView):
     def post(self, request, *args, **kwargs):
         load_dotenv()
@@ -923,18 +932,22 @@ class Cuped_View(AuthenticatedAPIView, APIView):
 
             csv_buffer = io.StringIO()
             result_df.to_csv(csv_buffer, index=False)
-            byte_buffer = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+            csv_content = csv_buffer.getvalue().encode("utf-8")
+            print(dataset.url)
 
             response = requests.put(
-                url=dataset.url,
-                data=byte_buffer.getvalue(),
+                url=rewrite_supabase_url_to_root(dataset.url),
+                data=csv_content,
                 headers={
                     "Authorization": f"Bearer {CLOUD_API_KEY}",
-                    "Content-Type": "text/csv"
+                    "Content-Type": "text/csv",
+                    "x-upsert": "true"
                 }
             )
+            
             response.raise_for_status()
             return Response({"status": 200, "success": True})
+            
         except Exception as e:
             local_exception_handler(e)
             return Response({"status": 500, "error": str(e)})
@@ -966,15 +979,13 @@ class Cupac_View(AuthenticatedAPIView, APIView):
 
             target_metric_column = request.data.get("target_metric")
             feature_columns = request.data.get("feature_columns")
-
-
+            if not target_metric_column:
+                logging.error("Error while getting target metric column")
+            if not feature_columns:
+                logging.error("Error while getting feature columns")
             history_file = request.FILES.get('history_file')
             if not history_file:
-                raise ValueError("History file not provided")
-            history_col = request.POST.get('column_name')
-            if not history_col:
-                raise ValueError("Column name for historical data not provided")
-
+                logging.error("Error while handelling history file")
             history_data_buf = io.BytesIO(history_file.read())
             dataset_buf = download_dataset(dataset)
             if not dataset_buf:
@@ -991,18 +1002,19 @@ class Cupac_View(AuthenticatedAPIView, APIView):
                 beta=beta,
             )
             if result_df is None:
-                raise ValueError("Error while conducting CUPED")
+                raise ValueError("Error while conducting CUPAC")
 
             csv_buffer = io.StringIO()
             result_df.to_csv(csv_buffer, index=False)
             byte_buffer = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
 
             response = requests.put(
-                url=dataset.url,
-                data=byte_buffer.getvalue(),
+                url=rewrite_supabase_url_to_root(dataset.url),
+                data=csv_buffer.getvalue().encode("utf-8"),
                 headers={
                     "Authorization": f"Bearer {CLOUD_API_KEY}",
-                    "Content-Type": "text/csv"
+                    "Content-Type": "text/csv",
+                    "x-upsert": "true"
                 }
             )
             response.raise_for_status()

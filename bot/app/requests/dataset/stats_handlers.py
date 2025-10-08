@@ -518,13 +518,13 @@ async def cuped(
 
     form = aiohttp.FormData()
     form.add_field("column_name", history_column)
-    form.add_field("history_file",
+    form.add_field("file",
         buffer,
         filename="history.csv",
         content_type="text/csv"
     )
 
-    exact_url = f"{base_url}ab-tests/anova/{id}/"
+    exact_url = f"{base_url}ab-tests/cuped/{id}/"
     logging.debug(f"Sending to {exact_url}")
 
     headers = {

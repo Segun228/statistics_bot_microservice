@@ -124,7 +124,7 @@ async def get_datasets_ab_criteria_menu(callback: CallbackQuery):
 async def get_datasets_precision_criteria_menu(callback: CallbackQuery):
     try:
         dataset_id = int(callback.data.split("_")[2])
-        await callback.message.answer("Выберите необходимый метод повышения точноти", reply_markup=await inline_keyboards.get_dataset_criteria_menu(dataset_id=dataset_id))
+        await callback.message.answer("Выберите необходимый метод повышения точноти", reply_markup=await inline_keyboards.get_precision_menu(dataset_id=dataset_id))
     except Exception as e:
         logging.error("An error occured")
         logging.exception(e)
@@ -322,7 +322,7 @@ async def count_n_end(message: Message, state: FSMContext):
             id=dataset_id,
             mde=mde
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -355,7 +355,7 @@ async def count_mde_start(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -460,7 +460,7 @@ async def ztest_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
         result = response if isinstance(response, dict) else json.loads(response.data)
 
@@ -567,7 +567,7 @@ async def ttest_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -671,7 +671,7 @@ async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -778,7 +778,7 @@ async def confirm_u_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -883,7 +883,7 @@ async def confirm_welch_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -999,7 +999,7 @@ async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1106,7 +1106,7 @@ async def confirm_cramer_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1212,7 +1212,7 @@ async def confirm_ad2_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1318,7 +1318,7 @@ async def confirm_ks_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1434,7 +1434,7 @@ async def confirm_sw_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1551,7 +1551,7 @@ async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1656,7 +1656,7 @@ async def bootstrap_short_end(callback: CallbackQuery, state:FSMContext):
             id=dataset_id,
             iterations = 10000
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1693,7 +1693,7 @@ async def long_bootstrap_finish(message:Message, state:FSMContext):
             id=dataset_id,
             iterations = iterations
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1799,7 +1799,7 @@ async def confirm_confirm_anova_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1832,7 +1832,7 @@ async def cuped_start(callback: CallbackQuery, state:FSMContext):
         await callback.message.answer("Вам будет необходимо выбрать ту колонку, которую вы хотите выбрать в качестве ковариаты")
         await callback.message.answer("Данные будут изменены, вернуть их не будет представляться возможным")
         await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
-            true_callback = "confirm_cuped_{dataset_id}",
+            true_callback = f"confirm_cuped_{dataset_id}",
             false_callback = f"dataset_{dataset_id}"
         ))
     except Exception as e:
@@ -1907,7 +1907,7 @@ async def finish_cuped(message: Message, state: FSMContext):
             history_df=history_df
         )
 
-        if not response:
+        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
             raise ValueError("Ошибка при выполнении CUPED")
 
         await message.answer(
@@ -1940,7 +1940,7 @@ async def cupac_start(callback: CallbackQuery, state:FSMContext):
         await callback.message.answer("В методе используется регрессионная модель. Вам будет необходимо указать на каких колонках мы будем учить модель. Убедитесь что эти колонки есть как в историческом датафрейме, так и в текущем датасете с тестом и контролем")
         await callback.message.answer("Откатить результаты будет невозможно")
         await callback.message.answer("Вы уверены, что хотите продолжить?", reply_markup= await inline_keyboards.get_confirm_menu(
-            true_callback = "confirm_cupac_{dataset_id}",
+            true_callback = f"confirm_cupac_{dataset_id}",
             false_callback = f"dataset_{dataset_id}"
         ))
     except Exception as e:
@@ -2000,56 +2000,88 @@ async def receive_target_metric(message: Message, state: FSMContext):
             return
 
         await state.update_data(target_metric=metric)
-
+        all_columns = data.get("columns", [])
+        await state.update_data(feature_cols=[])
         await message.answer(
-            "Теперь выберите одну или несколько колонок, которые будем использовать как признаки.\nМожно ввести через запятую или пробел.",
-            reply_markup=None
+            "Теперь выберите одну или несколько колонок, которые будем использовать как признаки.\nКогда закончите, введите 'готово'",
+            reply_markup=create_reply_column_keyboard_group(all_columns)
         )
+
         await state.set_state(Cupac.select_feature_columns)
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка при выборе метрики.")
 
 
+
+
 @router.message(Cupac.select_feature_columns)
 async def finish_cupac(message: Message, state: FSMContext):
     try:
-        feature_cols = [col.strip() for col in message.text.replace(",", " ").split()]
         data = await state.get_data()
-        all_columns = data.get("columns", [])
-        invalid = [c for c in feature_cols if c not in all_columns]
+        feature_cols = data.get("feature_cols", [])
+        
+        if message.text.strip().lower() == "готово":
+            if not feature_cols:
+                await message.answer("Сначала выберите хотя бы одну колонку-признак!")
+                return
+            
+            await message.answer("Уже обучаю модель...")
+            all_columns = data.get("columns", [])
+            invalid_columns = [col for col in feature_cols if col not in all_columns]
+            
+            if invalid_columns:
+                await message.answer(f"Некорректные колонки: {', '.join(invalid_columns)}")
+                return
+            logging.info(f"Selected feature columns: {feature_cols}")
+            logging.info(f"Total features count: {len(feature_cols)}")
 
-        if invalid:
-            await message.answer(f"Некорректные колонки: {', '.join(invalid)}")
-            return
+            file_id = data["history_file_id"]
+            file_info = await message.bot.get_file(file_id)
+            file_bytes = await message.bot.download_file(file_info.file_path)
+            df = pd.read_csv(BytesIO(file_bytes.getvalue()))
 
-        file_id = data["history_file_id"]
-        file_info = await message.bot.get_file(file_id)
-        file_bytes = await message.bot.download_file(file_info.file_path)
-        df = pd.read_csv(BytesIO(file_bytes.getvalue()))
+            response = await stats_handlers.cupac(
+                telegram_id=message.from_user.id,
+                id=data["id"],
+                feature_columns=feature_cols,  # ← Теперь передаем ВЕСЬ список
+                target_metric=data["target_metric"],
+                history_df=df
+            )
 
-        response = await stats_handlers.cupac(
-            telegram_id=message.from_user.id,
-            id=data["id"],
-            feature_columns=feature_cols,
-            target_metric=data["target_metric"],
-            history_df=df
-        )
+            if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+                raise ValueError("Ошибка при выполнении CUPAC")
 
-        if not response:
-            raise ValueError("Ошибка при CUPAC")
+            await message.answer(
+                "Данные успешно изменены!",
+                reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=data["id"])
+            )
+            await state.clear()
+            
+        else:
 
-        await message.answer(
-            "Данные успешно изменены!",
-            reply_markup=await inline_keyboards.get_dataset_single_menu(dataset_id=data["id"])
-        )
-        await state.clear()
+            new_feature = message.text.strip()
+
+            all_columns = data.get("columns", [])
+            if new_feature not in all_columns:
+                await message.answer("Колонка не найдена. Выберите из предложенных.")
+                return
+
+            if new_feature in feature_cols:
+                await message.answer("Эта колонка уже выбрана!")
+                return
+
+            feature_cols.append(new_feature)
+            await state.update_data(feature_cols=feature_cols)
+
+            await message.answer(f"Колонка '{new_feature}' принята!")
+            await message.answer(
+                f"Выбрано колонок: {len(feature_cols)}\n"
+                f"Текущий список: {', '.join(feature_cols)}\n\n"
+                "Можете продолжить выбор колонок.\nКогда закончите, введите 'готово'",
+                reply_markup=create_reply_column_keyboard_group(all_columns)
+            )
+            
     except Exception as e:
-        logging.exception(e)
-        await message.answer("Произошла ошибка при выполнении CUPAC.")
-
-
-
-
-
-
+        logging.exception(f"Ошибка в finish_cupac: {e}")
+        await message.answer("Произошла ошибка при выполнении CUPAC. Попробуйте позже.")

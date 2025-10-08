@@ -15,7 +15,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_val_score
-
+from sklearn.preprocessing import StandardScaler
 
 def count_mde(
     filepath_or_buffer,
@@ -853,30 +853,55 @@ def cuped(
             hist_series = history_df[history_col]
         else:
             hist_series = history_df.iloc[:, 0]
+        
         if hist_series is None or hist_series.empty:
             raise ValueError("Историческая колонка пуста")
 
         df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
         test = df[test_column]
         control = df[control_column]
+
         if test.empty or control.empty:
             raise ValueError("Error while extracting columns from the dataset")
 
-        theta = np.cov(pd.concat((test, control), axis=0), hist_series)[0, 1]/np.var(hist_series, ddof=1)
-        if len(test) != len(control) or len(control) != len(hist_series):
-            min_length = min(len(control), len(test), len(hist_series))
-            test = test.iloc[:min_length]
-            control = control.iloc[:min_length]
-            hist_series = hist_series.iloc[:min_length]
-            df = df.iloc[:min_length]
+
+        min_length = min(len(test), len(control), len(hist_series))
+        test = test.iloc[:min_length]
+        control = control.iloc[:min_length]
+        hist_series = hist_series.iloc[:min_length]
+        df = df.iloc[:min_length]
+
+
+        if min_length == 0:
+            raise ValueError("После обрезки данных не осталось")
+
+
+        test_hist_cov = np.cov(test, hist_series[:len(test)])[0, 1]
+        control_hist_cov = np.cov(control, hist_series[:len(control)])[0, 1]
+        hist_var = np.var(hist_series, ddof=1)
+
+
+        theta_test = test_hist_cov / hist_var if hist_var != 0 else 0
+        theta_control = control_hist_cov / hist_var if hist_var != 0 else 0
+
+        theta = float(np.mean((theta_test, theta_control)))
+
         hist_mean = hist_series.mean()
-        test_cuped = test - theta*(hist_series - hist_mean)
-        control_cuped = control - theta*(hist_series - hist_mean)
+        test_cuped = test - theta * (hist_series[:len(test)] - hist_mean)
+        control_cuped = control - theta * (hist_series[:len(control)] - hist_mean)
+        
+        df = df.copy()
         df[test_column] = test_cuped
         df[control_column] = control_cuped
+
+        logging.info(f"CUPED applied: theta={theta:.4f}")
+        logging.info(f"Original means - Test: {test.mean():.4f}, Control: {control.mean():.4f}")
+        logging.info(f"CUPED means - Test: {test_cuped.mean():.4f}, Control: {control_cuped.mean():.4f}")
+        
         return df
+        
     except Exception as e:
-        logging.error("Error while calculating")
+        logging.error("Error while calculating CUPED")
         logging.exception(e)
         return None
 
@@ -1023,6 +1048,10 @@ def anderson_2sample_test(
         return HttpResponseBadRequest("Error while calculating", e.__str__()), None
 
 
+
+
+
+
 def cupac(
     filepath_or_buffer,
     test_column,
@@ -1030,61 +1059,116 @@ def cupac(
     history_buf,
     feature_columns,
     target_metric_column,
-    alpha,
-    beta,
+    alpha=None,
+    beta=None
 ):
     try:
+        if isinstance(feature_columns, str):
+            feature_columns = [feature_columns]
+
+
         history_df = pd.read_csv(history_buf)
-        df = pd.read_csv(filepath_or_buffer=filepath_or_buffer)
+        df = pd.read_csv(filepath_or_buffer)
         test = df[test_column]
         control = df[control_column]
-        if all(col in history_df.columns for col in feature_columns) and all(col in df.columns for col in feature_columns) and target_metric_column in history_df.columns:
-            feature_df = history_df[feature_columns]
-            target_metric_df = history_df[target_metric_column]
-        else:
-            raise Exception("Missing required arguments")
 
-        degrees = range(1, 10)
-        scores = []
+
+        missing_in_history = [col for col in feature_columns if col not in history_df.columns]
+        missing_in_current = [col for col in feature_columns if col not in df.columns]
+        if missing_in_history:
+            raise ValueError(f"Feature columns {missing_in_history} not found in historical data")
+        if missing_in_current:
+            raise ValueError(f"Feature columns {missing_in_current} not found in current data")
+        if target_metric_column not in history_df.columns:
+            raise ValueError(f"Target metric column {target_metric_column} not found in historical data")
+
+
+        X_hist = history_df[feature_columns]
+        y_hist = history_df[target_metric_column]
+
+        if X_hist.isnull().any().any() or y_hist.isnull().any():
+            raise ValueError("NaN found in historical training data")
+
+        if len(X_hist) < 2:
+            raise ValueError("Not enough data for cross-validation")
+
+
+        degrees = range(1, 6)
+        best_score = float('inf')
+        best_degree = 1
 
         for d in degrees:
-            model = make_pipeline(PolynomialFeatures(degree=d), LinearRegression())
-            score = cross_val_score(model, feature_df, target_metric_df, cv=5, scoring='neg_mean_squared_error')
-            scores.append(-score.mean())
+            try:
+                model = make_pipeline(
+                    StandardScaler(),
+                    PolynomialFeatures(degree=d),
+                    LinearRegression()
+                )
+                cv = min(5, len(X_hist))
+                if cv < 2:
+                    break
+                scores = cross_val_score(
+                    model, X_hist, y_hist,
+                    cv=cv,
+                    scoring='neg_mean_squared_error'
+                )
+                current_score = -scores.mean()
+                if current_score < best_score:
+                    best_score = current_score
+                    best_degree = d
+            except Exception as model_error:
+                logging.warning(f"Degree {d} failed: {model_error}")
+                continue
 
-        k = 1
-        min_score = scores[0]
-        for ind, score in enumerate(scores):
-            if score < min_score:
-                min_score = score
-                k = ind + 1
 
-        model = make_pipeline(PolynomialFeatures(degree=k), LinearRegression())
-        model.fit(feature_df, target_metric_df)
+        final_model = make_pipeline(
+            StandardScaler(),
+            PolynomialFeatures(degree=best_degree),
+            LinearRegression()
+        )
+        final_model.fit(X_hist, y_hist)
 
-        hist_series = pd.Series(model.predict(
-            pd.concat((test, control), axis=0)[feature_columns]
-        ))
+        X_current = df[feature_columns]
+        if X_current.isnull().any().any():
+            raise ValueError("NaN found in current feature data")
 
-        if hist_series is None or hist_series.empty:
-            raise ValueError("Ковариационная колонка пуста")
+        predictions = final_model.predict(X_current)
+
         if test.empty or control.empty:
             raise ValueError("Error while extracting columns from the dataset")
 
-        theta = np.cov(pd.concat((test, control), axis=0), hist_series)[0, 1]/np.var(hist_series, ddof=1)
-        if len(test) != len(control) or len(control) != len(hist_series):
-            min_length = min(len(control), len(test), len(hist_series))
-            test = test.iloc[:min_length]
-            control = control.iloc[:min_length]
-            hist_series = hist_series.iloc[:min_length]
-            df = df.iloc[:min_length]
+
+        min_length = min(len(test), len(control), len(predictions))
+        test = test.iloc[:min_length]
+        control = control.iloc[:min_length]
+        hist_series = predictions[:min_length]
+        df = df.iloc[:min_length]
+
+        test_hist_cov = np.cov(test, hist_series[:len(test)])[0, 1]
+        control_hist_cov = np.cov(control, hist_series[:len(control)])[0, 1]
+        hist_var = np.var(hist_series, ddof=1)
+
+
+        theta_test = test_hist_cov / hist_var if hist_var != 0 else 0
+        theta_control = control_hist_cov / hist_var if hist_var != 0 else 0
+
+        theta = float(np.mean((theta_test, theta_control)))
+
         hist_mean = hist_series.mean()
-        test_cuped = test - theta*(hist_series - hist_mean)
-        control_cuped = control - theta*(hist_series - hist_mean)
+        test_cuped = test - theta * (hist_series[:len(test)] - hist_mean)
+        control_cuped = control - theta * (hist_series[:len(control)] - hist_mean)
+        
+        df = df.copy()
         df[test_column] = test_cuped
         df[control_column] = control_cuped
+
+        logging.info(f"CUPAC applied: theta={theta:.4f}")
+        logging.info(f"Original means - Test: {test.mean():.4f}, Control: {control.mean():.4f}")
+        logging.info(f"CUPAC means - Test: {test_cuped.mean():.4f}, Control: {control_cuped.mean():.4f}")
+        
         return df
+        
     except Exception as e:
-        logging.error("Error while calculating")
+        logging.error("Error while calculating CUPAC")
         logging.exception(e)
         return None
