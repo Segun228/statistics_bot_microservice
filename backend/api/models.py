@@ -52,3 +52,26 @@ class Dataset(models.Model):
         verbose_name = 'модель юнит-экономики'
         verbose_name_plural = 'модели юнит-экономики'
 
+
+task_choices = (
+    ('regression', 'Regression'),
+    ('classification', 'Classification'),
+    ('clusterization', 'Clusterization'),
+)
+
+
+type_choices = (
+    ('linear_regression', 'Linear Regression'),
+    ('polinomial_regression', 'Polinomial Regression'),
+    ('knn_regression', 'KNN Regression'),
+    ('gradient_boosting_regression', 'Gradient Boosting Regression'),
+
+    ('logistic_regression', 'Logistic Regression'),
+    ('support_vector_machine_classification', 'SVM Classification'),
+    ('knn_classification', 'KNN Classification'),
+    ('random_forest_classification', 'Random Forest Classification'),
+    ('gradient_boosting_classification', 'Gradient Boosting Regression'),
+
+    ('kmeans_clusterization', 'KMeans clusterization'),
+    ('density_clusterization', 'Density clusterization'),
+)
