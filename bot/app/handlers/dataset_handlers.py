@@ -2044,7 +2044,7 @@ async def finish_cupac(message: Message, state: FSMContext):
             response = await stats_handlers.cupac(
                 telegram_id=message.from_user.id,
                 id=data["id"],
-                feature_columns=feature_cols,  # ← Теперь передаем ВЕСЬ список
+                feature_columns=feature_cols,
                 target_metric=data["target_metric"],
                 history_df=df
             )

@@ -49,7 +49,6 @@ class ML_Model(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    length = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = 'Модель машинного обучения'

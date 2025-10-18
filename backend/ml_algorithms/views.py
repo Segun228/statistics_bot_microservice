@@ -24,12 +24,23 @@ from dotenv import load_dotenv
 
 from django.http import HttpResponseBadRequest
 
+from .model_handlers.factory import get_model
+
 import os
 import requests
 import pandas as pd
 import uuid
 from io import BytesIO
+import re
+import json
 load_dotenv()
+
+def rewrite_supabase_url_to_root(upload_url: str) -> str:
+    filename = upload_url.rstrip("/").split("/")[-1]
+    pattern = r"(https://[^/]+/storage/v1/object)/public/([^/]+)/.+"
+    replacement = r"\1/\2/" + filename
+    clean_url = re.sub(pattern, replacement, upload_url)
+    return clean_url
 
 
 class LoggingRetrieveUpdateDestroyModelAPIView(
@@ -135,16 +146,16 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
     def get_queryset(self):
         return ML_Model.objects.filter(user=self.request.user)
     
-    def perform_create(self, serializer):
-        load_dotenv()
-        request = self.request
-        CLOUD_URL = os.getenv("CLOUD_URL")
-        CLOUD_UPLOAD_URL = os.getenv("CLOUD_UPLOAD_URL")
-        CLOUD_API_KEY = os.getenv("CLOUD_API_KEY")
+    CLOUD_URL = os.getenv("CLOUD_URL")
+    CLOUD_UPLOAD_URL = os.getenv("CLOUD_UPLOAD_URL")
+    CLOUD_API_KEY = os.getenv("CLOUD_API_KEY")
         
-        if not CLOUD_URL or not CLOUD_API_KEY or not CLOUD_UPLOAD_URL:
-            logging.exception("Missing env required fields")
-            raise ValueError("Missing env required fields")
+    if not CLOUD_URL or not CLOUD_API_KEY or not CLOUD_UPLOAD_URL:
+        logging.exception("Missing env required fields")
+        raise ValueError("Missing env required fields")
+
+    def perform_create(self, serializer):
+        request = self.request
         
         csv_file = request.FILES.get("file")
         if not csv_file:
@@ -153,7 +164,7 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             raise ValidationError("Empty CSV file received")
         
 
-        dataset = serializer.save(user=request.user, url=None, columns=None)
+        model = serializer.save(user=request.user, url=None, columns=None)
         try:
             buffer = BytesIO()
             for chunk in csv_file.chunks():
@@ -162,12 +173,41 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
 
             df = pd.read_csv(buffer)
             df.dropna()
-            records = df.shape[0]
 
+            model.name = request.POST.get("name", "Undefined model")
             
+            model.task = request.POST.get("task", "regression")
+            model.type = request.POST.get("type", "linear_regression")
+
+            model.description = request.POST.get("description", f"{model.task} undefined {model.type} model")
+            request_features = request.POST.get("features")
+            request_target = request.POST.get("target")
+
+            if not request_features or not request_target:
+                raise ValueError("Feature and target fields are required")
+
+            try:
+                if isinstance(request_features, str):
+                    user_features = json.loads(request_features)
+                elif isinstance(request_features, list):
+                    user_features = request_features
+                else:
+                    raise ValidationError({"features": "Must be a list or JSON string"})
+            except json.JSONDecodeError:
+                raise ValidationError({"features": "Invalid JSON format"})
+
+            model.target = request_target
+
+            model_object = get_model(
+                model_type=model.type
+            )
+
+            final_features = model_object.get_features()
+
+# sending ready model to the cloud
             response = requests.put(
                 url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
-                data=buffer.getvalue(),
+                data=model_object.save(),
                 headers={
                     "Authorization": f"Bearer {CLOUD_API_KEY}",
                     "Content-Type": "text/csv"
@@ -180,17 +220,15 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
                 raise ValueError("Cloud did not return a file key")
 
             buffer.seek(0)
-            columns = list(pd.read_csv(buffer).columns)
 
-            dataset.url = CLOUD_URL + key
-            dataset.columns = columns
-            dataset.length = records
-            dataset.user=request.user
-            dataset.save()
+            model.get_url = CLOUD_URL + key
+            model.post_url = rewrite_supabase_url_to_root(CLOUD_URL + key)
+            model.features = final_features
+            model.save()
 
         except Exception as e:
             logging.error(e)
-            dataset.delete()
+            model.delete()
             raise
 
 
@@ -207,6 +245,17 @@ class ML_model_RetrieveUpdateDestroyAPIView(AuthenticatedAPIView, LoggingRetriev
 
 
 class ML_model_Predict_APIView(AuthenticatedAPIView, APIView):
+    lookup_field = 'id'
+    lookup_url_kwarg = 'model_id'
+
+    def get_queryset(self):
+        return ML_Model.objects.filter(user=self.request.user)
+
+    serializer_class = ML_ModelSerializer
+
+
+
+class ML_model_Teach_APIView(AuthenticatedAPIView, APIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'model_id'
 

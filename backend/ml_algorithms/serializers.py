@@ -20,7 +20,6 @@ class ML_ModelSerializer(serializers.ModelSerializer):
             "target",
             "get_url",
             "post_url",
-            "length",
             "created_at",
             "updated_at",
         ]

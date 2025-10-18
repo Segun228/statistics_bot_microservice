@@ -1,6 +1,12 @@
 from .regression import LinearRegressionModel
 from .base import BaseMLModel
+
+from .regression import PolynomialRegressionModel, KNNRegressionModel, GradientBoostingRegressionModel, RandomForestModel
+from .classification import LogisticRegressionModel, SVMClassificationModel, KNNClassificationModel, RandomForestClassificationModel, GradientBoostingClassificationModel
+from .clusterization import KMeansClusterModel, DensityClusterModel
+
 MODEL_REGISTRY = {
+    # === Regression ===
     "linear_regression": LinearRegressionModel,
     "polynomial_regression": PolynomialRegressionModel,
     "knn_regression": KNNRegressionModel,
