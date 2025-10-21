@@ -209,8 +209,12 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             model.target = request_target
 
             model_object = get_model(
-                model_type=model.type
+                model_type=model.type,
+                feature_columns= user_features,
+                target_column= request_target,
+                df = df
             )
+
 
             final_features = model_object.get_features()
 
