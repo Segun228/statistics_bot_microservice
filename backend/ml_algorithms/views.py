@@ -42,6 +42,16 @@ def rewrite_supabase_url_to_root(upload_url: str) -> str:
     clean_url = re.sub(pattern, replacement, upload_url)
     return clean_url
 
+CLOUD_UPLOAD_URL = os.getenv("CLOUD_UPLOAD_URL")
+CLOUD_API_KEY = os.getenv("CLOUD_UPLOAD_URL", "KEY")
+CLOUD_URL = os.getenv("CLOUD_URL")
+
+if not CLOUD_UPLOAD_URL or CLOUD_UPLOAD_URL is None:
+    raise Exception("No .env CLOUD_UPLOAD_URL provided")
+if not CLOUD_API_KEY or CLOUD_API_KEY is None:
+    raise Exception("No .env CLOUD_API_KEY provided")
+if not CLOUD_URL or CLOUD_URL is None:
+    raise Exception("No .env CLOUD_URL provided")
 
 class LoggingRetrieveUpdateDestroyModelAPIView(
     mixins.RetrieveModelMixin,
@@ -192,9 +202,9 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
                 elif isinstance(request_features, list):
                     user_features = request_features
                 else:
-                    raise ValidationError({"features": "Must be a list or JSON string"})
+                    raise Exception({"features": "Must be a list or JSON string"})
             except json.JSONDecodeError:
-                raise ValidationError({"features": "Invalid JSON format"})
+                raise Exception({"features": "Invalid JSON format"})
 
             model.target = request_target
 
@@ -205,6 +215,8 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             final_features = model_object.get_features()
 
 # sending ready model to the cloud
+            if not CLOUD_UPLOAD_URL or CLOUD_UPLOAD_URL is None:
+                raise Exception("No .env CLOUD_UPLOAD_URL provided")
             response = requests.put(
                 url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
                 data=model_object.save(),
