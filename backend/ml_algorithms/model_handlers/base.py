@@ -24,7 +24,6 @@ class BaseMLModel(ABC):
     def fit(self, df: pd.DataFrame) -> 'BaseMLModel':
         """Полный пайплайн обучения модели."""
         try:
-
             df_processed = self._prepare_data(df)
             X = df_processed[self.processed_feature_names]
             y = df_processed[self.target_column]
@@ -38,12 +37,12 @@ class BaseMLModel(ABC):
             raise
 
     @abstractmethod
-    def _train(self, X: pd.DataFrame, y: pd.Series):
+    def _train(self, X: pd.DataFrame, y: pd.Series)->dict:
         """Внутренний метод обучения - реализуется в подклассах."""
         raise NotImplementedError
 
     @abstractmethod
-    def predict(self, X: pd.DataFrame):
+    def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame]:
         """Делает предсказания."""
         raise NotImplementedError
 
@@ -118,7 +117,6 @@ class BaseMLModel(ABC):
                 final_columns.remove(col)
             final_columns.extend(categorical_columns)
             
-            # ✅ ИСПРАВЛЕНИЕ: сохраняем целевую переменную
             if self.target_column not in final_columns:
                 final_columns.append(self.target_column)
                 
