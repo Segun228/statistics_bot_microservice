@@ -58,13 +58,12 @@ async def retrieve_model(telegram_id, model_id=None):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}ml-algorithms/get_model" 
+        exact_url = f"{base_url}ml-algorithms/get_model/{f'{model_id}/' if model_id else ''}" 
         logging.debug(f"Sending to {exact_url}")
 
         async with session.get(
             exact_url, 
             headers=headers,
-            data=data
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("датасеты получены")

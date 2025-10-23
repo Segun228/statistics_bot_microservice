@@ -25,3 +25,13 @@ def list_ml_models(data, task):
     return keyboard.adjust(1).as_markup()
 
 
+def single_model_menu(
+    model,
+    model_id
+):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Предсказать", callback_data=f"model_predict_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Дообучить", callback_data=f"model_train_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Обучить заново", callback_data=f"model_retrain_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
+    return keyboard.adjust(1).as_markup()

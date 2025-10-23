@@ -122,17 +122,96 @@ async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext)
 async def retrieve_model_menu(callback: CallbackQuery, state: FSMContext):
     try:
         model_id = int(callback.data.split("_")[1].strip())
-        model = 
-        await callback.message.answer(
-            "Выберите существующую модель или создайте новую",
-            reply_markup= inline_keyboards.list_ml_models(
-                models,
-                task = task_type
-            )
+        model = await retrieve_model(
+            telegram_id=callback.from_user.id,
+            model_id=model_id
         )
+        if not model:
+            raise Exception("Error while retrieving the model")
+        
+        message_text = format_model_info(model)
+        
+        await callback.message.answer(
+            message_text,
+            reply_markup=inline_keyboards.single_model_menu(
+                model=model,
+                model_id=model_id
+            ),
+            parse_mode="HTML"
+        )
+        
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+def format_model_info(model) -> str:
+    """Форматирует информацию о модели в красивый текст"""
+
+    emoji = {
+        "name": "🏷️",
+        "description": "📝", 
+        "task": "🎯",
+        "type": "🔧",
+        "features": "📊",
+        "target": "🎯",
+        "dates": "📅",
+        "urls": "🔗"
+    }
+    
+    created = model.created_at.strftime("%d.%m.%Y %H:%M") if model.created_at else "Не указано"
+    updated = model.updated_at.strftime("%d.%m.%Y %H:%M") if model.updated_at else "Не указано"
+
+    features_text = format_features(model.features)
+    
+    message = f"""
+<b>🤖 МАШИННОЕ ОБУЧЕНИЕ | МОДЕЛЬ</b>
+
+{emoji['name']} <b>Название:</b> <code>{model.name or 'Не указано'}</code>
+
+{emoji['description']} <b>Описание:</b>
+{model.description or 'Не указано'}
+
+{emoji['task']} <b>Задача:</b> <code>{model.task_display or model.task or 'Не указано'}</code>
+
+{emoji['type']} <b>Тип модели:</b> <code>{model.type_display or model.type or 'Не указано'}</code>
+
+{emoji['features']} <b>Признаки:</b>
+{features_text}
+
+{emoji['target']} <b>Целевая переменная:</b> <code>{model.target or 'Не указано'}</code>
+
+{emoji['dates']} <b>Даты:</b>
+├ Создана: <code>{created}</code>
+└ Обновлена: <code>{updated}</code>
+
+<b>🆔 ID модели:</b> <code>{model.id}</code>
+"""
+    
+    return message.strip()
+
+
+def format_features(features) -> str:
+    """Форматирует список фич в красивый вид"""
+    if not features:
+        return "└ <i>Не указаны</i>"
+    
+    if isinstance(features, list):
+        if len(features) == 1:
+            return f"└ <code>{features[0]}</code>"
+        else:
+            features_lines = []
+            for i, feature in enumerate(features[:10]):  # Ограничиваем показ
+                prefix = "├" if i < len(features) - 1 else "└"
+                features_lines.append(f"{prefix} <code>{feature}</code>")
+            
+            if len(features) > 10:
+                features_lines.append(f"└ <i>... и еще {len(features) - 10} признаков</i>")
+            
+            return "\n".join(features_lines)
+    else:
+        return f"└ <code>{features}</code>"
+
 
 
 @router.callback_query(F.data.startswith("create_ML_model"))
