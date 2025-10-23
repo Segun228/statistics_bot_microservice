@@ -1,5 +1,4 @@
 from app.handlers.router import ml_router as router
-from app.handlers.router import dataset_router as router
 import logging
 import re
 import zipfile
