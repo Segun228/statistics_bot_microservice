@@ -54,6 +54,7 @@ catalogue_choice = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Распределения", callback_data="distributions")],
         [InlineKeyboardButton(text="Датасеты", callback_data="datasets")],
+        [InlineKeyboardButton(text="ML модели", callback_data="ml_models")],
         [InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")],
     ]
 )

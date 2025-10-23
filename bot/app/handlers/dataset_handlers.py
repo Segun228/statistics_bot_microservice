@@ -1849,7 +1849,7 @@ async def ask_history_file(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("Пожалуйста, загрузите CSV-файл с историческими данными.\nОн должен содержать колонку, которую вы хотите использовать как ковариату.")
     except Exception as e:
         logging.exception(e)
-        await callback.message.answer("Произошла ошибка, попробуйте позже.")
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
 
 
@@ -1918,7 +1918,7 @@ async def finish_cuped(message: Message, state: FSMContext):
 
     except Exception as e:
         logging.exception(e)
-        await message.answer("Извините, произошла ошибка, попробуйте позже.")
+        await message.answer("Извините, произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
 
 
@@ -1960,7 +1960,7 @@ async def ask_history_file_cupac(callback: CallbackQuery, state: FSMContext):
         )
     except Exception as e:
         logging.exception(e)
-        await callback.message.answer("Произошла ошибка, попробуйте позже.")
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
 @router.message(Cupac.waiting_for_history_file, F.document)
 async def receive_history_file_cupac(message: Message, state: FSMContext):
@@ -2084,4 +2084,4 @@ async def finish_cupac(message: Message, state: FSMContext):
             
     except Exception as e:
         logging.exception(f"Ошибка в finish_cupac: {e}")
-        await message.answer("Произошла ошибка при выполнении CUPAC. Попробуйте позже.")
+        await message.answer("Произошла ошибка при выполнении CUPAC. попробуйте позже.", reply_markup=inline_user_keyboards.home)

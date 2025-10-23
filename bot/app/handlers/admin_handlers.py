@@ -165,7 +165,7 @@ async def start_broadcast(state: FSMContext, message: Message, bot: Bot):
     users_data = await get_alive(telegram_id=message.from_user.id)
 
     if not users_data:
-        await message.answer("Ошибка при рассылке. Попробуйте позже.")
+        await message.answer("Ошибка при рассылке. попробуйте позже.", reply_markup=inline_user_keyboards.home)
         await state.clear()
         return
 
