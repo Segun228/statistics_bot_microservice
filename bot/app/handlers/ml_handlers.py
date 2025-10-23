@@ -61,7 +61,7 @@ from app.states.states import SampleSize
 
 
 from app.requests.dataset import stats_handlers
-from app.requests.ml_models.get_all_models import get_all_models
+from app.requests.ml_models.get_all_models import get_all_models, retrieve_model
 from math import floor, ceil
 
 
@@ -102,13 +102,13 @@ async def get_ml_task_menu(callback: CallbackQuery, state: FSMContext):
 async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext):
     try:
         task_type = callback.data.split("_")[1].strip()
-        models = get_all_models(
+        models = await get_all_models(
             telegram_id=callback.from_user.id,
             model_task=task_type
         )
-        callback.message.answer(
+        await callback.message.answer(
             "Выберите существующую модель или создайте новую",
-            reply_markup=inline_keyboards.list_ml_models(
+            reply_markup= inline_keyboards.list_ml_models(
                 models,
                 task = task_type
             )
@@ -117,3 +117,35 @@ async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext)
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
+
+@router.callback_query(F.data.startswith("MLmodel_"))
+async def retrieve_model_menu(callback: CallbackQuery, state: FSMContext):
+    try:
+        model_id = int(callback.data.split("_")[1].strip())
+        model = 
+        await callback.message.answer(
+            "Выберите существующую модель или создайте новую",
+            reply_markup= inline_keyboards.list_ml_models(
+                models,
+                task = task_type
+            )
+        )
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+@router.callback_query(F.data.startswith("create_ML_model"))
+async def create_model_menu(callback: CallbackQuery, state: FSMContext):
+    try:
+        task_type = callback.data.split("_")[3].strip()
+        await callback.message.answer(
+            "Выберите существующую модель или создайте новую",
+            reply_markup= inline_keyboards.list_ml_models(
+                models,
+                task = task_type
+            )
+        )
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)

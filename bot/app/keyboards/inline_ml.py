@@ -16,9 +16,8 @@ task_choice = InlineKeyboardMarkup(
 )
 
 def list_ml_models(data, task):
-    if data is None or not data:
-        raise ValueError("No models were given")
     keyboard = InlineKeyboardBuilder()
+    data = [] if data is None or not data else data
     for model in data:
         keyboard.add(InlineKeyboardButton(text=f"{model.get('name', "Неизвестная модель")}", callback_data=f"MLmodel_{model.get('id')}"))
     keyboard.add(InlineKeyboardButton(text="Создать модель ✨", callback_data=f"create_ML_model_{task}"))

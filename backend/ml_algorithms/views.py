@@ -9,7 +9,7 @@ from api.permissions import IsAdminOrDebugOrReadOnly
 
 from backend.authentication import TelegramAuthentication
 
-
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 import logging
@@ -302,3 +302,34 @@ class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
         
         serializer = self.serializer_class(queryset, many=True)
         return Response(data=serializer.data)
+
+
+class ML_models_get_ListAPIView(AuthenticatedAPIView, APIView):
+
+    def get_queryset(self):
+        return ML_Model.objects.filter(user=self.request.user)
+
+    serializer_class = ML_ModelSerializer
+
+    def get(self, request, *args, **kwargs):
+        
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(data=serializer.data)
+
+
+
+class ML_models_get_RetrieveAPIView(AuthenticatedAPIView, APIView):
+    
+    def get(self, request, model_id, *args, **kwargs):
+        try:
+            instance = ML_Model.objects.get(id=model_id, user=request.user)
+            
+            serializer = ML_ModelSerializer(instance)
+            return Response(data=serializer.data)
+            
+        except ML_Model.DoesNotExist:
+            return Response(
+                {"error": "Model not found or access denied"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
