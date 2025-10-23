@@ -61,6 +61,7 @@ from app.states.states import SampleSize
 
 
 from app.requests.dataset import stats_handlers
+from app.requests.ml_models.get_all_models import get_all_models
 from math import floor, ceil
 
 
@@ -97,31 +98,21 @@ async def get_ml_task_menu(callback: CallbackQuery, state: FSMContext):
 
 
 
-@router.callback_query(F.data.startswith("regression_task"))
+@router.callback_query(F.data.startswith("task_"))
 async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext):
     try:
-        callback.message.answer("Выберите существующую модель регрессии или создайте новую")
-        pass
-    except Exception as e:
-        logging.exception(e)
-        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
-
-@router.callback_query(F.data.startswith("classification_task"))
-async def get_classification_models_menu(callback: CallbackQuery, state: FSMContext):
-    try:
-        callback.message.answer("Выберите существующую модель классификации или создайте новую")
-        pass
-    except Exception as e:
-        logging.exception(e)
-        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
-
-@router.callback_query(F.data.startswith("clusterization_task"))
-async def get_clusterization_models_menu(callback: CallbackQuery, state: FSMContext):
-    try:
-        callback.message.answer("Выберите существующую модель кластеризации или создайте новую")
-        pass
+        task_type = callback.data.split("_")[1].strip()
+        models = get_all_models(
+            telegram_id=callback.from_user.id,
+            model_task=task_type
+        )
+        callback.message.answer(
+            "Выберите существующую модель или создайте новую",
+            reply_markup=inline_keyboards.list_ml_models(
+                models,
+                task = task_type
+            )
+        )
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)

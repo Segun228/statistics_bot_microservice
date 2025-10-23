@@ -279,3 +279,26 @@ class ML_model_Teach_APIView(AuthenticatedAPIView, APIView):
         return ML_Model.objects.filter(user=self.request.user)
 
     serializer_class = ML_ModelSerializer
+
+
+
+class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
+
+    def get_queryset(self):
+        return ML_Model.objects.filter(user=self.request.user)
+
+    serializer_class = ML_ModelSerializer
+
+    def get(self, request, *args, **kwargs):
+        task = request.GET.get("task")
+        type = request.GET.get("type")
+        
+        queryset = self.get_queryset()
+        
+        if task:
+            queryset = queryset.filter(task=task, type=type)
+        if type:
+            queryset = queryset.filter(type=type)
+        
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(data=serializer.data)

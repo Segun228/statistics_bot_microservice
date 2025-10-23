@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 load_dotenv()
 
-async def get_all_models(telegram_id, model_type = None):
+async def get_all_models(telegram_id, model_task=None, model_type = None):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
 
@@ -24,12 +24,17 @@ async def get_all_models(telegram_id, model_type = None):
         headers = {
             "Authorization": f"Bot {telegram_id}",
         }
-        exact_url = f"{base_url}api/datasets/" 
+        data = {
+            "type":model_type,
+            "task":model_task
+        }
+        exact_url = f"{base_url}ml-algorithms/get_models" 
         logging.debug(f"Sending to {exact_url}")
-        
+
         async with session.get(
             exact_url, 
-            headers=headers
+            headers=headers,
+            data=data
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("датасеты получены")
