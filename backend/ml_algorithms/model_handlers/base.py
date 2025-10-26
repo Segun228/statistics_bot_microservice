@@ -5,6 +5,8 @@ import pandas as pd
 import logging
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+from typing import Tuple
+
 
 class BaseMLModel(ABC):
     """Базовый класс для всех ML-моделей."""
@@ -21,28 +23,28 @@ class BaseMLModel(ABC):
         self.is_fitted = False
         self.processed_feature_names = []
 
-    def fit(self, df: pd.DataFrame) -> 'BaseMLModel':
+    def fit(self, df: pd.DataFrame) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
         """Полный пайплайн обучения модели."""
         try:
             df_processed = self._prepare_data(df)
             X = df_processed[self.processed_feature_names]
             y = df_processed[self.target_column]
-            self._train(X, y)
+            response, img_zip = self._train(X, y)
             
             self.is_fitted = True
             logging.info(f"Модель успешно обучена на {len(self.processed_feature_names)} признаках")
-            return self
+            return self, response, img_zip
         except Exception as e:
             logging.error(f"Ошибка при обучении модели: {e}")
             raise
 
     @abstractmethod
-    def _train(self, X: pd.DataFrame, y: pd.Series)->dict:
+    def _train(self, X: pd.DataFrame, y: pd.Series)->Tuple[dict|None, io.BytesIO|None]:
         """Внутренний метод обучения - реализуется в подклассах."""
         raise NotImplementedError
 
     @abstractmethod
-    def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame]:
+    def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]:
         """Делает предсказания."""
         raise NotImplementedError
 

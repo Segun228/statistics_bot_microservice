@@ -98,3 +98,37 @@ class Cupac(StatesGroup):
     waiting_for_history_file = State()
     select_target_metric = State()
     select_feature_columns = State()
+
+
+class CreateModel(StatesGroup):
+    start_create = State()
+    type = State()
+    name = State()
+    description = State()
+    description = State()
+    target = State()
+    file = State()
+
+
+class PredictModel(StatesGroup):
+    start_predict = State()
+    get_file = State()
+    finish_predict = State()
+
+
+class FitModel(StatesGroup):
+    start_fit = State()
+    get_fit_file = State()
+    finish_fit = State()
+
+
+class RefitModel(StatesGroup):
+    confirm = State()
+    start_refit = State()
+    get_refit_file = State()
+    finish_refit = State()
+
+
+class DeleteModel(StatesGroup):
+    confirm = State()
+    handle = State()

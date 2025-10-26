@@ -31,7 +31,53 @@ def single_model_menu(
 ):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(InlineKeyboardButton(text="Предсказать", callback_data=f"model_predict_{model_id}"))
-    keyboard.add(InlineKeyboardButton(text="Дообучить", callback_data=f"model_train_{model_id}"))
-    keyboard.add(InlineKeyboardButton(text="Обучить заново", callback_data=f"model_retrain_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Дообучить", callback_data=f"model_fit_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Обучить заново", callback_data=f"model_refit_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Редактировать модель", callback_data=f"model_put_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Удалить модель", callback_data=f"model_delete_{model_id}"))
     keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
+    return keyboard.adjust(1).as_markup()
+
+
+MODEL_TYPES_BY_TASK = {
+    'regression': (
+        ('linear_regression', 'Linear Regression'),
+        ('polinomial_regression', 'Polinomial Regression'),
+        ('knn_regression', 'KNN Regression'),
+        ('gradient_boosting_regression', 'Gradient Boosting Regression'),
+    ),
+    'classification': (
+        ('logistic_regression', 'Logistic Regression'),
+        ('support_vector_machine_classification', 'SVM Classification'),
+        ('knn_classification', 'KNN Classification'),
+        ('random_forest_classification', 'Random Forest Classification'),
+        ('gradient_boosting_classification', 'Gradient Boosting Regression'),
+    ),
+    'clusterization': (
+        ('kmeans_clusterization', 'KMeans clusterization'),
+        ('density_clusterization', 'Density clusterization'),
+    )
+}
+
+
+def list_ml_algorithms(task):
+    keyboard = InlineKeyboardBuilder()
+    algorithms = MODEL_TYPES_BY_TASK.get(task, [])
+    for model in algorithms:
+        keyboard.add(InlineKeyboardButton(text=f"{model[1]}", callback_data=f"create_model_{model[0]}"))
+    keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
+    return keyboard.adjust(1).as_markup()
+
+
+def select_target_column(columns):
+    keyboard = InlineKeyboardBuilder()
+    for col in columns:
+        keyboard.add(InlineKeyboardButton(text=col, callback_data=f"select_target_{col}"))
+    return keyboard.adjust(1).as_markup()
+
+
+def confirm(model_id:int):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="Подтвердить", callback_data=f"confirm_{model_id}"))
+    keyboard.add(InlineKeyboardButton(text="Отклонить", callback_data=f"decline_{model_id}"))
     return keyboard.adjust(1).as_markup()

@@ -35,6 +35,8 @@ import re
 import json
 load_dotenv()
 
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
+
 def rewrite_supabase_url_to_root(upload_url: str) -> str:
     filename = upload_url.rstrip("/").split("/")[-1]
     pattern = r"(https://[^/]+/storage/v1/object)/public/([^/]+)/.+"
@@ -271,7 +273,7 @@ class ML_model_Predict_APIView(AuthenticatedAPIView, APIView):
 
 
 
-class ML_model_Teach_APIView(AuthenticatedAPIView, APIView):
+class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'model_id'
 
@@ -279,6 +281,13 @@ class ML_model_Teach_APIView(AuthenticatedAPIView, APIView):
         return ML_Model.objects.filter(user=self.request.user)
 
     serializer_class = ML_ModelSerializer
+
+    def post(self, request, model_id, *args, **kwargs):
+        
+        queryset = self.get_queryset().filter(id = model_id)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(data=serializer.data)
 
 
 
@@ -318,8 +327,15 @@ class ML_models_get_ListAPIView(AuthenticatedAPIView, APIView):
 
 
 
-class ML_models_get_RetrieveAPIView(AuthenticatedAPIView, APIView):
-    
+class ML_models_get_RetrieveAPIView(AuthenticatedAPIView, RetrieveUpdateDestroyAPIView):
+    lookup_field = 'id'
+    lookup_url_kwarg = 'model_id'
+
+    def get_queryset(self):
+        return ML_Model.objects.filter(user=self.request.user)
+
+    serializer_class = ML_ModelSerializer
+
     def get(self, request, model_id, *args, **kwargs):
         try:
             instance = ML_Model.objects.get(id=model_id, user=request.user)
