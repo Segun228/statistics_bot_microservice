@@ -41,7 +41,7 @@ class ML_Model(models.Model):
         choices=type_choices,
         default="linear",
     )
-    features = ArrayField(base_field=models.CharField(max_length=100), blank=True, null=True)
+    features = ArrayField(base_field=models.CharField(max_length=10000), blank=True, null=True)
     target = models.CharField(max_length=200, null=False, blank=False)
     get_url = models.URLField(max_length=1000, null=True, blank=True, default="")
     post_url = models.URLField(max_length=1000, null=True, blank=True, default="")

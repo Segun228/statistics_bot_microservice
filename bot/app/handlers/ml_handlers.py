@@ -5,6 +5,7 @@ import zipfile
 import io
 import json
 import re
+from aiogram.types import BufferedInputFile
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram import F
@@ -57,7 +58,7 @@ from app.requests.dataset.patch_errors.patch_errors import patch_errors
 from app.requests.dataset.patch_categories.patch_groups import set_groups
 
 from app.keyboards.reply_dataset import create_reply_column_keyboard_group
-from app.states.states import FitModel, RefitModel, PredictModel, DeleteModel
+from app.states.states import FitModel, RefitModel, PredictModel, DeleteModel, GenerateSample
 
 
 from app.requests.dataset import stats_handlers
@@ -65,6 +66,7 @@ from app.requests.ml_models.get_all_models import get_all_models, retrieve_model
 from app.requests.ml_models.mlflow import fit_model, refit_model, predict_model
 from math import floor, ceil
 
+from app.requests.ml_models.mlflow import get_sample
 
 def escape_md(text: str) -> str:
     """Экранирование специальных символов для MarkdownV2"""
@@ -501,6 +503,116 @@ async def finish_prediction(message: Message, state: FSMContext, bot: Bot):
         logging.exception(f"Error in finish_prediction: {e}")
         await message.answer("❌ Произошла ошибка при обработке файла")
 
+
+#==============================================================================================================
+# Генерация выборки
+#==============================================================================================================
+
+@router.callback_query(F.data.startswith("geterate_sample_"))
+async def model_start_generating_sample(callback: CallbackQuery, state: FSMContext):
+    try:
+        model_task = callback.data.split("_")[2]
+        await state.set_state(GenerateSample.start)
+        await state.update_data(
+            task = model_task
+        )
+        await callback.message.answer(
+            "Введите общее количество признаков (с учетом бесполезных)"
+        )
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Ошибка во время генерации выборки")
+
+
+@router.message(GenerateSample.start)
+async def model_enter_features(message: Message, state: FSMContext):
+    try:
+        if not message.text:
+            raise Exception("Error messafe format")
+        total_features = int(message.text)
+        await state.set_state(GenerateSample.features)
+        await state.update_data(
+            total_features = total_features
+        )
+        await message.answer(
+            "Введите количество значимых признаков"
+        )
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка во время генерации выборки")
+
+
+@router.message(GenerateSample.features)
+async def model_enter_meaning_features(message: Message, state: FSMContext):
+    try:
+        if not message.text:
+            raise Exception("Error messafe format")
+        meaning_features = int(message.text)
+        await state.set_state(GenerateSample.meaning)
+        await state.update_data(
+            meaning_features = meaning_features
+        )
+        await message.answer(
+            "Введите количество элементов выборки"
+        )
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка во время генерации выборки")
+
+
+@router.message(GenerateSample.meaning)
+async def model_enter_number_samples(message: Message, state: FSMContext):
+    try:
+        if not message.text:
+            raise Exception("Error messafe format")
+        numbers = int(message.text)
+        await state.set_state(GenerateSample.noise)
+        await state.update_data(
+            n = numbers
+        )
+        await message.answer(
+            "Введите шум выборки (дробь от 0 до 1 формата 0.233)"
+        )
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка во время генерации выборки")
+
+
+@router.message(GenerateSample.noise)
+async def model_enter_noise(message: Message, state: FSMContext, bot:Bot):
+    try:
+        if not message.text:
+            raise Exception("Error messafe format")
+        noise = float(message.text)
+        await state.set_state(GenerateSample.noise)
+        data = await state.get_data()
+        n = data.get("n", 1000)
+        meaning_features = data.get("meaning_features", 1000)
+        total_features = data.get("total_features", 1000)
+        task = data.get("task", 1000)
+        await message.answer(
+            "Собираю вам выборку..."
+        )
+        sample = get_sample(
+            task = task,
+            n = n,
+            noise = noise,
+            meaning_features = meaning_features,
+            total_features = total_features,
+            random_state = np.random.randint(
+                low=0,
+                high=1000
+            )
+        )
+        document = BufferedInputFile(sample, filename="sample.csv")
+        await bot.send_document(
+            chat_id=message.from_user.id,
+            document=document
+        )
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Ошибка во время генерации выборки")
+
 #==============================================================================================================
 # Дообучение модели
 #==============================================================================================================
@@ -658,7 +770,7 @@ async def finish_refit(message: Message, state: FSMContext, bot:Bot):
 #==============================================================================================================
 
 
-@router.callback_query(F.data.startswith("model_refit_"))
+@router.callback_query(F.data.startswith("model_delete_"))
 async def model_start_delete(callback: CallbackQuery, state: FSMContext):
     try:
         await state.set_state(DeleteModel.confirm)

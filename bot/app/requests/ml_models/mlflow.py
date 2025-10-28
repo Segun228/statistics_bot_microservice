@@ -6,6 +6,10 @@ import logging
 from dotenv import load_dotenv
 from pprint import pprint
 import pandas as pd
+import numpy as np
+from sklearn.datasets import make_regression, make_classification, make_blobs
+from io import BytesIO
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv()
@@ -155,3 +159,62 @@ async def predict_model(
 
 
 
+def get_sample(
+    task: str,
+    n: int,
+    noise: float,
+    meaning_features: int,
+    total_features: int,
+    random_state: int = 42
+) -> bytes:
+    """
+    Генерирует синтетические данные и возвращает CSV в байтах
+    """
+    np.random.seed(random_state)
+    
+    if task == "regression":
+        X, y = make_regression(
+            n_samples=n,
+            n_features=total_features,
+            n_informative=meaning_features,
+            noise=noise,
+            random_state=random_state
+        )
+        # Создаем DataFrame
+        feature_cols = [f'feature_{i+1}' for i in range(total_features)]
+        df = pd.DataFrame(X, columns=feature_cols)
+        df['target'] = y
+        
+    elif task == "classification":
+        X, y = make_classification(
+            n_samples=n,
+            n_features=total_features,
+            n_informative=meaning_features,
+            n_redundant=total_features - meaning_features,
+            n_clusters_per_class=1,
+            flip_y=noise,
+            random_state=random_state
+        )
+        feature_cols = [f'feature_{i+1}' for i in range(total_features)]
+        df = pd.DataFrame(X, columns=feature_cols)
+        df['target'] = y
+        
+    elif task == "clusterization":
+        X, y= make_blobs(
+            n_samples=n,
+            n_features=total_features,
+            centers=meaning_features,
+            cluster_std=noise * 10,
+            random_state=random_state
+        )
+        feature_cols = [f'feature_{i+1}' for i in range(total_features)]
+        df = pd.DataFrame(X, columns=feature_cols)
+        df['cluster'] = y
+        
+    else:
+        raise ValueError(f"Unknown task: {task}. Use 'regression', 'classification' or 'clusterization'")
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False)
+    buffer.seek(0)
+    
+    return buffer.getvalue()

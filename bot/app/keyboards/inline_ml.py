@@ -21,6 +21,7 @@ def list_ml_models(data, task):
     for model in data:
         keyboard.add(InlineKeyboardButton(text=f"{model.get('name', "Неизвестная модель")}", callback_data=f"MLmodel_{model.get('id')}"))
     keyboard.add(InlineKeyboardButton(text="Создать модель ✨", callback_data=f"create_ML_model_{task}"))
+    keyboard.add(InlineKeyboardButton(text="Сгенерировать выборку ✍️", callback_data=f"geterate_sample_{task}"))
     keyboard.add(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
     return keyboard.adjust(1).as_markup()
 

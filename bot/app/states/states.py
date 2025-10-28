@@ -132,3 +132,10 @@ class RefitModel(StatesGroup):
 class DeleteModel(StatesGroup):
     confirm = State()
     handle = State()
+
+
+class GenerateSample(StatesGroup):
+    start = State()
+    features = State()
+    meaning = State()
+    noise = State()
