@@ -37,33 +37,34 @@ from django.forms.models import model_to_dict
 
 from api.models import Distribution
 from typing import Iterable
+import uuid
+
 
 def build_regression_plots(
     result_column,
     X,
     y,
-    features:Iterable,
-    target:str = "Target column"
-)->io.BytesIO|None:
-    """Creates visualization from regression
-
-    Args:
-        result_column (series or dataframe or nd): targets
-        X (dataframe): features
-        y (series or dataframe or nd): targets
-        features (Iterable): list of feature names
-        target (str, optional):  Defaults to "Target column"
-
-    Returns:
-        io.BytesIO|None: zip with photos
-    """
+    features: Iterable,
+    target: str = "Target column"
+) -> io.BytesIO | None:
+    """Creates visualization from regression"""
     try:
+        if hasattr(result_column, 'flatten'):
+            result_column = result_column.flatten()
+        if hasattr(y, 'flatten'):
+            y = y.flatten()
+        if (X is None or y is None or result_column is None or 
+            X.empty or
+            (hasattr(X, 'size') and X.size == 0) or 
+            (hasattr(y, 'size') and y.size == 0) or 
+            (hasattr(result_column, 'size') and result_column.size == 0)):
+            raise Exception("Improper arrays given")
+
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
             plt.figure(figsize=(8, 6))
             sns.histplot(result_column)
             plt.title("Result histogram")
-            plt.legend()
             plt.grid(True)
             plt.tight_layout()
             plt.axhline(0, color='black', linewidth=0.5)
@@ -73,17 +74,22 @@ def build_regression_plots(
             plt.savefig(buf, format='png', dpi=300)
             plt.close()
             buf.seek(0)
-            zipf.writestr(f"{uuid1()}.png", buf.getvalue())
-            if X is not None and y is not None and len(X) == len(y):
-                buf = io.BytesIO()
+            zipf.writestr(f"histogram_{uuid.uuid4()}.png", buf.getvalue())
+            
+            if (X is not None and y is not None and 
+                hasattr(X, '__len__') and hasattr(y, '__len__') and 
+                len(X) == len(y)):
+                
                 for feature in features:
+                    if feature not in X.columns:
+                        continue
+                        
                     plt.figure(figsize=(8, 6))
                     sns.scatterplot(
                         x=X[feature],
                         y=y
                     )
                     plt.title(f"Connection between {feature} and {target}")
-                    plt.legend()
                     plt.grid(True)
                     plt.tight_layout()
                     plt.axhline(0, color='black', linewidth=0.5)
@@ -93,14 +99,13 @@ def build_regression_plots(
                     plt.savefig(buf, format='png', dpi=300)
                     plt.close()
                     buf.seek(0)
-                    zipf.writestr(f"{uuid1()}.png", buf.getvalue())
+                    zipf.writestr(f"scatter_{feature}_{uuid.uuid4()}.png", buf.getvalue())
         zip_buffer.seek(0)
         return zip_buffer
     except Exception as e:
-        logging.error(e)
+        logging.error(f"Error while building plots: {e}")
         logging.error("An error while building plots")
         raise
-
 
 
 class LinearRegressionModel(BaseMLModel):
@@ -198,10 +203,12 @@ class LinearRegressionModel(BaseMLModel):
             target = self.target_column
             if not features or not target:
                 raise ValueError("Could not find an essential column")
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
             for col in features:
                 if col not in given_columns:
                     raise ValueError("Could not find an essential column")
-            result_taret = np.ndarray(self.model.predict(X[features])).reshape(-1, 1)
+            result_taret = np.array(self.model.predict(X[features])).reshape(-1, 1)
             X_extended = X.copy()
             X_extended[target] = result_taret
             return (

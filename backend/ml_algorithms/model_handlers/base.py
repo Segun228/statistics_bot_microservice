@@ -69,16 +69,20 @@ class BaseMLModel(ABC):
         self.processed_feature_names = [col for col in working_df.columns if col != self.target_column]
 
         return working_df
-
-    def _feature_analyzer(self, df: pd.DataFrame, var_coef_threshold=0.05, correlation_threshold=0.75) -> tuple[pd.DataFrame, list]:
+    
+    def _feature_analyzer(self, df: pd.DataFrame, var_coef_threshold=0.01, correlation_threshold=0.8) -> tuple[pd.DataFrame, list]:
         """Отбрасывает бесполезные фичи, отбирает по коэффициенту вариации и корреляции пирсона"""
         try:
             df = df.dropna()
-            numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
-            categorical_columns = df.select_dtypes(include=['object', 'category']).columns.tolist()
+
+            feature_columns = [col for col in df.columns if col != self.target_column]
+            
+            numeric_columns = [col for col in feature_columns if np.issubdtype(df[col].dtype, np.number)]
+            categorical_columns = [col for col in feature_columns if col not in numeric_columns]
+            
             if not numeric_columns:
                 logging.warning("В данных нет числовых признаков")
-                return df, list(df.columns)
+                return df, [self.target_column] + feature_columns  # возвращаем все фичи + таргет
 
             final_columns = []
             for col in numeric_columns:
@@ -95,10 +99,11 @@ class BaseMLModel(ABC):
 
             if not final_columns:
                 logging.warning("Все признаки отфильтрованы по коэффициенту вариации")
-                return df, list(df.columns)
+                return df, [self.target_column] + feature_columns
 
             corr_df_pearson = df[final_columns].corr()
             corr_df_spearman = df[final_columns].corr(method="spearman")
+            
             high_cor_column = []
             for i in range(len(corr_df_pearson.columns)):
                 for j in range(i + 1, len(corr_df_pearson.columns)):
@@ -114,15 +119,17 @@ class BaseMLModel(ABC):
                             high_cor_column.append(col2)
                         else:
                             high_cor_column.append(col1)
+            
             high_cor_column = set(high_cor_column)
             for col in high_cor_column:
                 final_columns.remove(col)
+            
             final_columns.extend(categorical_columns)
             
-            if self.target_column not in final_columns:
-                final_columns.append(self.target_column)
-                
-            return df[final_columns], final_columns
+            final_columns_with_target = final_columns + [self.target_column]
+            
+            return df[final_columns_with_target], final_columns_with_target
+            
         except Exception as e:
             logging.error(e)
             return df, list(df.columns)
@@ -163,13 +170,29 @@ class BaseMLModel(ABC):
 
     @classmethod
     def load(cls, model_bytes):
-        """Фабричный метод: создаёт экземпляр и подгружает модель."""
+        """Фабричный метод для загрузки полного объекта."""
+        loaded_obj = joblib.load(model_bytes)
         instance = cls.__new__(cls)
-        instance.model = joblib.load(model_bytes)
-        if not hasattr(instance, "feature_columns"):
-            instance.feature_columns = []
+        instance.__dict__.update(loaded_obj.__dict__)
         return instance
 
     def get_features(self):
         """Возвращает список используемых признаков."""
         return self.processed_feature_names if self.is_fitted else self.feature_columns
+
+    @classmethod
+    def reborn(
+        cls,
+        target_column: str,
+        feature_columns: list,
+        model,
+        processed_feature_names: list,
+    ):
+        """Создает новый инстанс класса с готовой моделью."""
+        instance = cls.__new__(cls)
+        instance.target_column = target_column
+        instance.feature_columns = feature_columns
+        instance.model = model
+        instance.is_fitted = True
+        instance.processed_feature_names = processed_feature_names
+        return instance

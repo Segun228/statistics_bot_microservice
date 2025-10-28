@@ -33,7 +33,6 @@ def get_model(
     model_type: str,
     feature_columns: Iterable,
     target_column: str,
-    df: pd.DataFrame
 ) -> BaseMLModel:
     """Возвращает инстанс нужной ML-модели по её типу."""
     try:
@@ -45,5 +44,18 @@ def get_model(
     return model_class(
         feature_columns = feature_columns,
         target_column = target_column,
-        df = df
     )
+
+
+def get_class(
+    model_type: str,
+) -> BaseMLModel:
+    """Возвращает класс нужной ML-модели по её типу."""
+    try:
+        model_class = MODEL_REGISTRY[model_type]
+    except KeyError:
+        raise ValueError(
+            f"❌ Unknown model type: '{model_type}'. "
+            f"Available: {list(MODEL_REGISTRY.keys())}")
+    return model_class
+

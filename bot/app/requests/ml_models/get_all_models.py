@@ -125,7 +125,7 @@ async def post_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
-                return await response.json()
+                return await response.read()
             else:
                 text = await response.text()
                 logging.error(f"Ошибка {response.status}: {text}")

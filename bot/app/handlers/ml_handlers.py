@@ -148,7 +148,7 @@ async def retrieve_model_menu(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
 
-def format_model_info(model) -> str:
+def format_model_info(model_dict) -> str:
     """Форматирует информацию о модели в красивый текст"""
 
     emoji = {
@@ -162,33 +162,46 @@ def format_model_info(model) -> str:
         "urls": "🔗"
     }
     
-    created = model.created_at.strftime("%d.%m.%Y %H:%M") if model.created_at else "Не указано"
-    updated = model.updated_at.strftime("%d.%m.%Y %H:%M") if model.updated_at else "Не указано"
+    # Получаем значения из словаря
+    name = model_dict.get('name') or 'Не указано'
+    description = model_dict.get('description') or 'Не указано'
+    task = model_dict.get('task_display') or model_dict.get('task') or 'Не указано'
+    model_type = model_dict.get('type_display') or model_dict.get('type') or 'Не указано'
+    features = model_dict.get('features')
+    target = model_dict.get('target') or 'Не указано'
+    model_id = model_dict.get('id', 'Не указано')
+    
+    # Форматируем даты
+    created_at = model_dict.get('created_at')
+    updated_at = model_dict.get('updated_at')
+    
+    created = created_at.strftime("%d.%m.%Y %H:%M") if hasattr(created_at, 'strftime') else "Не указано"
+    updated = updated_at.strftime("%d.%m.%Y %H:%M") if hasattr(updated_at, 'strftime') else "Не указано"
 
-    features_text = format_features(model.features)
+    features_text = format_features(features)
     
     message = f"""
 <b>🤖 МАШИННОЕ ОБУЧЕНИЕ | МОДЕЛЬ</b>
 
-{emoji['name']} <b>Название:</b> <code>{model.name or 'Не указано'}</code>
+{emoji['name']} <b>Название:</b> <code>{name}</code>
 
 {emoji['description']} <b>Описание:</b>
-{model.description or 'Не указано'}
+{description}
 
-{emoji['task']} <b>Задача:</b> <code>{model.task_display or model.task or 'Не указано'}</code>
+{emoji['task']} <b>Задача:</b> <code>{task}</code>
 
-{emoji['type']} <b>Тип модели:</b> <code>{model.type_display or model.type or 'Не указано'}</code>
+{emoji['type']} <b>Тип модели:</b> <code>{model_type}</code>
 
 {emoji['features']} <b>Признаки:</b>
 {features_text}
 
-{emoji['target']} <b>Целевая переменная:</b> <code>{model.target or 'Не указано'}</code>
+{emoji['target']} <b>Целевая переменная:</b> <code>{target}</code>
 
 {emoji['dates']} <b>Даты:</b>
 ├ Создана: <code>{created}</code>
 └ Обновлена: <code>{updated}</code>
 
-<b>🆔 ID модели:</b> <code>{model.id}</code>
+<b>🆔 ID модели:</b> <code>{model_id}</code>
 """
     
     return message.strip()
@@ -313,7 +326,6 @@ async def finish_creation(callback: CallbackQuery, state: FSMContext):
     from pprint import pprint
     try:
         data = await state.get_data()
-        await callback.message.answer(str(data))
         columns = data.get("columns", [])
         target = callback.data.split("_")[2].strip()
         name = data.get("name")
@@ -332,18 +344,17 @@ async def finish_creation(callback: CallbackQuery, state: FSMContext):
             task = task,
             type = type
         )
-        print(response) #TODO
         await callback.message.answer("Модель создана! Теперь вы можете делать предсказания, дообучать или обучать модель заново")
         await callback.message.answer("Обратите внимание, что часть признаков могла быть убрана как неэффективные или деструктивные",
             reply_markup=inline_user_keyboards.catalogue
         )
         await state.clear()
+
     except Exception as e:
         logging.exception(e)
-        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
-
-
+        await callback.message.answer("Произошла ошибка при обработке результатов, попробуйте позже.", 
+                                        reply_markup=inline_user_keyboards.home)
+        await state.clear()
 
 
 #==============================================================================================================
@@ -365,9 +376,10 @@ async def model_make_prediction(callback: CallbackQuery, state: FSMContext):
         if not mod or mod is None:
             raise ValueError("Error while getting the single model")
         await callback.message.answer(
-            "\n\n".join(mod.get("columns")),
+            "Ваши фичи:\n"+
+            ("\n\n".join(mod.get("features"))),
         )
-        await state.update_data(columns = mod.get("columns"))
+        await state.update_data(columns = mod.get("features"))
         await state.update_data(target = mod.get("target"))
     except Exception as e:
         logging.exception(e)
@@ -375,43 +387,119 @@ async def model_make_prediction(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(F.document, PredictModel.start_predict)
-async def finish_prediction(message: Message, state: FSMContext, bot:Bot):
+async def finish_prediction(message: Message, state: FSMContext, bot: Bot):
     try:
         await state.set_state(PredictModel.finish_predict)
+
         file_id = message.document.file_id
         file = await bot.get_file(file_id)
         file_path = file.file_path
+        if not file_path:
+            await message.answer("❌ Ошибка при получении файла")
+            return
+
         file_bytes = await bot.download_file(file_path)
-        buffer = io.BytesIO()
+        buffer = BytesIO()
         buffer.write(file_bytes.read())
-        buffer.seek(0)  
-        await state.update_data(dataset = buffer)
-        df = pd.read_csv(
-            buffer
-        )
-        cols = df.columns
+        buffer.seek(0)
+
+        try:
+            df = pd.read_csv(buffer)
+        except Exception as e:
+            await message.answer("❌ Ошибка чтения CSV файла")
+            return
+
         data = await state.get_data()
-        state_cols = data.get("features")
-        target = data.get("target")
-        if not state_cols or not target:
-            raise Exception("Error while comparing given columns")
-        if target not in cols:
-            raise Exception(f"The column {target} was not found")
-        for col in state_cols:
-            if col not in cols:
-                raise Exception(f"The column {col} was not found")
+        state_cols = data.get("columns", [])
+        model_id = data.get("id")
+
+        if not state_cols:
+            await message.answer("❌ Не найдены ожидаемые колонки")
+            return
+
+        if not model_id:
+            await message.answer("❌ Не найден ID модели")
+            return
+
+        missing_cols = [col for col in state_cols if col not in df.columns]
+        if missing_cols:
+            await message.answer(f"❌ В файле отсутствуют колонки: {', '.join(missing_cols)}")
+            return
+
+        try:
+            df_selected = df[state_cols].copy()
+        except Exception as e:
+            await message.answer("❌ Ошибка при выборе колонок")
+            return
+
+        df_clean = df_selected.dropna()
+        if len(df_clean) == 0:
+            await message.answer("❌ После очистки данных не осталось строк")
+            return
+
+        await message.answer("📊 Обрабатываю данные...")
+
         response = await predict_model(
-            telegram_id = message.from_user.id,
-            model_id = data,
-            df = df
+            telegram_id=message.from_user.id,
+            model_id=model_id,
+            df=df_clean
         )
+
         await state.clear()
-        await message.answer(f"{response if response else "Модель успешно доучена!"}")
+
+        if response and len(response) > 0:
+            try:
+
+                zip_buffer = BytesIO(response)
+
+                with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+                    if 'predictions.csv' in zip_file.namelist():
+                        with zip_file.open('predictions.csv') as csv_file:
+                            csv_data = csv_file.read()
+                        csv_buffer = BufferedInputFile(
+                            csv_data,
+                            filename="predictions.csv"
+                        )
+                        await message.answer_document(
+                            csv_buffer,
+                            caption="📊 Результаты предсказания"
+                        )
+                        if 'images.zip' in zip_file.namelist():
+                            await message.answer("📈 Генерирую графики...")
+                            with zip_file.open('images.zip') as images_zip:
+                                images_data = images_zip.read()
+                                images_buffer = BytesIO(images_data)
+                            with zipfile.ZipFile(images_buffer, 'r') as images_archive:
+                                for image_name in images_archive.namelist():
+                                    if image_name.endswith('.png'):
+                                        with images_archive.open(image_name) as img_file:
+                                            img_data = img_file.read()
+                                            await message.answer_photo(
+                                                photo=BufferedInputFile(img_data, filename=image_name),
+                                                caption=f"📈 {image_name.replace('.png', '')}"
+                                            )
+                    else:
+                        await message.answer("❌ В архиве не найден файл с предсказаниями")
+                        
+            except zipfile.BadZipFile:
+                # Если не ZIP, пробуем показать что пришло
+                try:
+                    error_text = response.decode('utf-8')
+                    if error_text.startswith('{'):
+                        error_data = json.loads(error_text)
+                        await message.answer(f"❌ Ошибка: {error_data.get('error', 'Unknown error')}")
+                    else:
+                        await message.answer(f"❌ Ошибка сервера: {error_text[:500]}")
+                except:
+                    await message.answer("❌ Неизвестный формат ответа от сервера")
+            except Exception as e:
+                await message.answer(f"❌ Ошибка при обработке архива: {str(e)}")
+        else:
+            await message.answer("❌ Сервер не вернул данные")
+            
     except Exception as e:
-        logging.exception(e)
-        logging.error("Error while fitting the model")
-
-
+        logging.exception(f"Error in finish_prediction: {e}")
+        await message.answer("❌ Произошла ошибка при обработке файла")
 
 #==============================================================================================================
 # Дообучение модели

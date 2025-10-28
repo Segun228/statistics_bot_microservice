@@ -18,7 +18,7 @@ async def fit_model(
     load_dotenv()
     base_url = os.getenv("BASE_URL")
     csv_buffer = io.BytesIO()
-    df.to_csv(path_or_buf=csv_buffer)
+    df.to_csv(path_or_buf=csv_buffer, index=False)
     if not base_url:
         logging.error("No base URL was provided")
         raise ValueError("No base URL was provided")
@@ -33,7 +33,7 @@ async def fit_model(
             "Authorization": f"Bot {telegram_id}",
         }
 
-        exact_url = f"{base_url}model-fit/{model_id}/"
+        exact_url = f"{base_url}ml-algorithms/model-fit/{model_id}/"
         logging.debug(f"Sending to {exact_url}")
 
         form = aiohttp.FormData()
@@ -65,7 +65,7 @@ async def refit_model(
     load_dotenv()
     base_url = os.getenv("BASE_URL")
     csv_buffer = io.BytesIO()
-    df.to_csv(path_or_buf=csv_buffer)
+    df.to_csv(path_or_buf=csv_buffer,index=False)
     if not base_url:
         logging.error("No base URL was provided")
         raise ValueError("No base URL was provided")
@@ -80,7 +80,7 @@ async def refit_model(
             "Authorization": f"Bot {telegram_id}",
         }
 
-        exact_url = f"{base_url}model-refit/{model_id}/"
+        exact_url = f"{base_url}ml-algorithms/model-refit/{model_id}/"
         logging.debug(f"Sending to {exact_url}")
 
         form = aiohttp.FormData()
@@ -113,7 +113,7 @@ async def predict_model(
     load_dotenv()
     base_url = os.getenv("BASE_URL")
     csv_buffer = io.BytesIO()
-    df.to_csv(path_or_buf=csv_buffer)
+    df.to_csv(path_or_buf=csv_buffer,index=False)
     if not base_url:
         logging.error("No base URL was provided")
         raise ValueError("No base URL was provided")
@@ -128,7 +128,8 @@ async def predict_model(
             "Authorization": f"Bot {telegram_id}",
         }
 
-        exact_url = f"{base_url}model-predict/{model_id}/"
+        exact_url = f"{base_url}ml-algorithms/model-predict/{model_id}/"
+        logging.error(exact_url)
         logging.debug(f"Sending to {exact_url}")
 
         form = aiohttp.FormData()
@@ -147,7 +148,7 @@ async def predict_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
-                return await response.text()
+                return await response.read()
             else:
                 text = await response.text()
                 logging.error(text)

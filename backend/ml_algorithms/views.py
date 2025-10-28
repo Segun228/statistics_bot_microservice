@@ -1,7 +1,20 @@
-
+import zipfile
 from .models import ML_Model
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.http import HttpResponse
+
+from ml_algorithms.model_handlers.base import (
+    BaseMLModel
+)
+
+
+from ml_algorithms.model_handlers.regression import (
+    LinearRegressionModel
+)
+
+from ml_algorithms.model_handlers.factory import get_model
+
 
 from .serializers import ML_ModelSerializer
 
@@ -33,6 +46,10 @@ import uuid
 from io import BytesIO
 import re
 import json
+import joblib
+
+from ml_algorithms.model_handlers.factory import get_class
+
 load_dotenv()
 
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -45,7 +62,7 @@ def rewrite_supabase_url_to_root(upload_url: str) -> str:
     return clean_url
 
 CLOUD_UPLOAD_URL = os.getenv("CLOUD_UPLOAD_URL")
-CLOUD_API_KEY = os.getenv("CLOUD_UPLOAD_URL", "KEY")
+CLOUD_API_KEY = os.getenv("CLOUD_API_KEY", "KEY")
 CLOUD_URL = os.getenv("CLOUD_URL")
 
 if not CLOUD_UPLOAD_URL or CLOUD_UPLOAD_URL is None:
@@ -176,7 +193,12 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             raise ValidationError("Empty CSV file received")
         
 
-        model = serializer.save(user=request.user, url=None, columns=None)
+        model = serializer.save(
+            user=request.user, 
+            get_url="", 
+            post_url="",
+            features=[]
+        )
         try:
             buffer = BytesIO()
             for chunk in csv_file.chunks():
@@ -214,26 +236,31 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
                 model_type=model.type,
                 feature_columns= user_features,
                 target_column= request_target,
+            )
+            model_object, resp, img_zip = model_object.fit(
                 df = df
             )
 
-
             final_features = model_object.get_features()
 
-# sending ready model to the cloud
             if not CLOUD_UPLOAD_URL or CLOUD_UPLOAD_URL is None:
                 raise Exception("No .env CLOUD_UPLOAD_URL provided")
+            clean_url = (CLOUD_UPLOAD_URL.rstrip("/") + "/" + str(uuid.uuid4())).strip()
+            clean_url = re.sub(r'[\u200b\u200c\u200d\ufeff]', '', clean_url)
+
             response = requests.put(
-                url=CLOUD_UPLOAD_URL + str(uuid.uuid4()),
+                url=clean_url,
                 data=model_object.save(),
                 headers={
                     "Authorization": f"Bearer {CLOUD_API_KEY}",
-                    "Content-Type": "text/csv"
+                    "Content-Type": "application/octet-stream",
                 }
             )
             response.raise_for_status()
             
             key = response.json().get("Key")
+            if key and "statistics-bot-bucket/" in key:
+                key = key.replace("statistics-bot-bucket/", "")
             if not key:
                 raise ValueError("Cloud did not return a file key")
 
@@ -243,7 +270,18 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             model.post_url = rewrite_supabase_url_to_root(CLOUD_URL + key)
             model.features = final_features
             model.save()
-
+            """
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                if img_zip and img_zip is not None:
+                    zip_file.writestr('images.zip', img_zip.getvalue())
+                if resp and resp is not None:
+                    zip_file.writestr('fit_result.json', json.dumps(resp))
+            zip_buffer.seek(0)
+            response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename="prediction_results.zip"'
+            return response
+        """
         except Exception as e:
             logging.error(e)
             model.delete()
@@ -271,6 +309,86 @@ class ML_model_Predict_APIView(AuthenticatedAPIView, APIView):
 
     serializer_class = ML_ModelSerializer
 
+    def post(self, request, *args, **kwargs):
+        model_id = int(self.kwargs.get('model_id'))
+        model = self.get_queryset().filter(id=model_id).first()
+        
+        if not model:
+            return Response({"error": "Model not found", "status":404}, status=404)
+        
+        get_url = model.get_url
+        if not get_url:
+            return Response({"error": "No model URL found"}, status=400)
+        try:
+            response = requests.get(get_url)
+            response.raise_for_status()
+            sklearn_ml_model = joblib.load(BytesIO(response.content))
+            if not model.features:
+                raise Exception("Could not reach model`s features")
+            ml_model = get_class(model.type).reborn(
+                target_column=model.target,
+                feature_columns=model.features,
+                model = sklearn_ml_model,
+                processed_feature_names=model.features
+            )
+        except Exception as e:
+            logging.error(f"Model loading failed: {e}")
+            return Response({"error": "Failed to load model"}, status=500)
+        csv_file = request.FILES.get("file")
+        if not csv_file:
+            return Response({"error": "CSV file is required"}, status=400)
+        
+        try:
+            buffer = BytesIO()
+            for chunk in csv_file.chunks():
+                buffer.write(chunk)
+            buffer.seek(0)
+            df = pd.read_csv(buffer)
+
+            try:
+                df_selected = df[model.features].copy()
+            except KeyError as e:
+                return Response({"error": f"Feature selection failed: {e}"}, status=400)
+
+            try:
+                for col in df_selected.columns:
+                    if df_selected[col].dtype == 'object':
+                        df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
+                df_clean = df_selected.dropna()
+                
+                if len(df_clean) == 0:
+                    return Response({"error": "No valid numeric data after cleaning"}, status=400)
+
+            except Exception as e:
+                return Response({"error": f"Data type conversion failed: {e}"}, status=400)
+
+
+        except Exception as e:
+            logging.error(f"CSV processing failed: {e}")
+            return Response({"error": "Invalid CSV file"}, status=400)
+
+        try:
+            _, result, img_zip = ml_model.predict(df)
+            predictions_df = result
+            buffer = BytesIO()
+            predictions_df.to_csv(buffer, index=False)
+            buffer.seek(0)
+            from django.http import HttpResponse
+
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                if buffer and buffer is not None:
+                    zip_file.writestr('predictions.csv', buffer.getvalue())
+                if img_zip and img_zip is not None:
+                    zip_file.writestr('images.zip', img_zip.getvalue())
+            zip_buffer.seek(0)
+            response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename="prediction_results.zip"'
+            return response
+
+        except Exception as e:
+            logging.error(f"Prediction failed: {e}")
+            return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
 
 
 class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
@@ -285,7 +403,6 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
     def post(self, request, model_id, *args, **kwargs):
         
         queryset = self.get_queryset().filter(id = model_id)
-
         serializer = self.serializer_class(queryset, many=True)
         return Response(data=serializer.data)
 
