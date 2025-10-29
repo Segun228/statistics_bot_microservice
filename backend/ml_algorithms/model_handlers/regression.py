@@ -85,7 +85,7 @@ def build_regression_plots(
                         continue
                         
                     plt.figure(figsize=(8, 6))
-                    sns.scatterplot(
+                    sns.regplot(
                         x=X[feature],
                         y=y
                     )
@@ -148,6 +148,7 @@ class LinearRegressionModel(BaseMLModel):
                     n_jobs=-1
                 )
                 grid_search.fit(X_train, y_train)
+                self.set_gridsearch_params(grid_search)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
                 self.is_fitted = True
@@ -268,6 +269,7 @@ class PolynomialRegressionModel(BaseMLModel):
                     n_jobs=-1
                 )
                 grid_search.fit(X_train, y_train)
+                self.set_gridsearch_params(grid_search)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
                 self.is_fitted = True
@@ -347,6 +349,7 @@ class PolynomialRegressionModel(BaseMLModel):
             logging.error(e)
 
 
+
 class KNNRegressionModel(BaseMLModel):
     def _train(self, X: pd.DataFrame, y: pd.Series)->Tuple[dict|None, io.BytesIO|None]:
         try:
@@ -362,31 +365,22 @@ class KNNRegressionModel(BaseMLModel):
                 )
                 pipeline = Pipeline([
                     ('scaler', StandardScaler()),
-                    ('model', KNeighborsRegressor(
-                        n_jobs=-1
-                    ))
+                    ('model', KNeighborsRegressor())
                 ])
-                
                 pipeline.fit(X_train, y_train)
-
                 y_pred = pipeline.predict(X_test)
-
                 mse = mean_squared_error(y_test, y_pred)
                 mae = mean_absolute_error(y_test, y_pred)
                 r2 = r2_score(y_test, y_pred)
-
                 print(f"MSE: {mse:.4f}")
                 print(f"RMSE: {np.sqrt(mse):.4f}")
                 print(f"MAE: {mae:.4f}")
                 print(f"R²: {r2:.4f}")
-
-
                 param_grid = {
-                    'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
-                    'n_neighbors': np.arange(1, 10),
-                    'weights':['uniform', 'distance']
+                    'model__algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+                    'model__n_neighbors': list(range(1, 10)),
+                    'model__weights': ['uniform', 'distance']
                 }
-
                 grid_search = GridSearchCV(
                     pipeline, 
                     param_grid, 
@@ -394,8 +388,8 @@ class KNNRegressionModel(BaseMLModel):
                     scoring='neg_mean_squared_error',
                     n_jobs=-1
                 )
-
                 grid_search.fit(X_train, y_train)
+                self.set_gridsearch_params(grid_search)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
                 self.is_fitted = True
@@ -419,26 +413,28 @@ class KNNRegressionModel(BaseMLModel):
                 mse = mean_squared_error(y_test, pred_vals)
                 rmse = sqrt(mse)
                 mae = mean_absolute_error(y_test, pred_vals)
-                return {
-                    "status":"ok",
-                    "R2":r2,
-                    "MSE":mse,
-                    "RMSE":rmse,
-                    "MAE":mae
-                }, build_regression_plots(
+
+                zip_buffer = build_regression_plots(
                     result_column=pred_vals,
                     X = X_test,
                     y = pred_vals,
                     features = X.columns,
                     target = self.target_column
                 )
+
+                return {
+                    "status":"ok",
+                    "R2":r2,
+                    "MSE":mse,
+                    "RMSE":rmse,
+                    "MAE":mae
+                }, zip_buffer
         except Exception as e:
             logging.error("Error while training the model")
             logging.error(e)
             return {
                     "error":str(e)
                 }, None
-
 
     def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
         """Делает предсказания"""
@@ -449,10 +445,12 @@ class KNNRegressionModel(BaseMLModel):
             target = self.target_column
             if not features or not target:
                 raise ValueError("Could not find an essential column")
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
             for col in features:
                 if col not in given_columns:
                     raise ValueError("Could not find an essential column")
-            result_taret = np.ndarray(self.model.predict(X[features])).reshape(-1, 1)
+            result_taret = np.array(self.model.predict(X[features])).reshape(-1, 1)
             X_extended = X.copy()
             X_extended[target] = result_taret
             return (
@@ -488,26 +486,19 @@ class GradientBoostingRegressionModel(BaseMLModel):
                     ('scaler', StandardScaler()),
                     ('model', GradientBoostingRegressor())
                 ])
-                
                 pipeline.fit(X_train, y_train)
-
                 y_pred = pipeline.predict(X_test)
-
                 mse = mean_squared_error(y_test, y_pred)
                 mae = mean_absolute_error(y_test, y_pred)
                 r2 = r2_score(y_test, y_pred)
-
                 print(f"MSE: {mse:.4f}")
                 print(f"RMSE: {np.sqrt(mse):.4f}")
                 print(f"MAE: {mae:.4f}")
                 print(f"R²: {r2:.4f}")
-
-
                 param_grid = {
-                    'loss': ['squared_error', 'absolute_error', 'huber', 'quantile'],
-                    'criterion': ['friedman_mse', 'squared_error'],
+                    'model__loss': ['squared_error', 'absolute_error', 'huber', 'quantile'],
+                    'model__criterion': ['friedman_mse', 'squared_error'],
                 }
-
                 grid_search = GridSearchCV(
                     pipeline, 
                     param_grid, 
@@ -515,8 +506,8 @@ class GradientBoostingRegressionModel(BaseMLModel):
                     scoring='neg_mean_squared_error',
                     n_jobs=-1
                 )
-
                 grid_search.fit(X_train, y_train)
+                self.set_gridsearch_params(grid_search)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
                 self.is_fitted = True
@@ -540,26 +531,28 @@ class GradientBoostingRegressionModel(BaseMLModel):
                 mse = mean_squared_error(y_test, pred_vals)
                 rmse = sqrt(mse)
                 mae = mean_absolute_error(y_test, pred_vals)
-                return {
-                    "status":"ok",
-                    "R2":r2,
-                    "MSE":mse,
-                    "RMSE":rmse,
-                    "MAE":mae
-                }, build_regression_plots(
+
+                zip_buffer = build_regression_plots(
                     result_column=pred_vals,
                     X = X_test,
                     y = pred_vals,
                     features = X.columns,
                     target = self.target_column
                 )
+
+                return {
+                    "status":"ok",
+                    "R2":r2,
+                    "MSE":mse,
+                    "RMSE":rmse,
+                    "MAE":mae
+                }, zip_buffer
         except Exception as e:
             logging.error("Error while training the model")
             logging.error(e)
             return {
                     "error":str(e)
                 }, None
-
 
     def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
         """Делает предсказания"""
@@ -570,10 +563,12 @@ class GradientBoostingRegressionModel(BaseMLModel):
             target = self.target_column
             if not features or not target:
                 raise ValueError("Could not find an essential column")
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
             for col in features:
                 if col not in given_columns:
                     raise ValueError("Could not find an essential column")
-            result_taret = np.ndarray(self.model.predict(X[features])).reshape(-1, 1)
+            result_taret = np.array(self.model.predict(X[features])).reshape(-1, 1)
             X_extended = X.copy()
             X_extended[target] = result_taret
             return (
@@ -590,6 +585,7 @@ class GradientBoostingRegressionModel(BaseMLModel):
         except Exception as e:
             logging.error("Internal error while fitting the model")
             logging.error(e)
+
 
 
 class RandomForestModel(BaseMLModel):
@@ -609,26 +605,22 @@ class RandomForestModel(BaseMLModel):
                     ('scaler', StandardScaler()),
                     ('model', RandomForestRegressor())
                 ])
-                
                 pipeline.fit(X_train, y_train)
-
                 y_pred = pipeline.predict(X_test)
-
                 mse = mean_squared_error(y_test, y_pred)
                 mae = mean_absolute_error(y_test, y_pred)
                 r2 = r2_score(y_test, y_pred)
-
                 print(f"MSE: {mse:.4f}")
                 print(f"RMSE: {np.sqrt(mse):.4f}")
                 print(f"MAE: {mae:.4f}")
                 print(f"R²: {r2:.4f}")
-
-
                 param_grid = {
-                    'n_estimators': [100, 200, 500, 700, 1000, 1500],
-                    'criterion': ['friedman_mse', 'squared_error'],
+                    'model__n_estimators': [50, 100, 200, 400],
+                    'model__max_depth': [None, 10, 20, 30, 50],
+                    'model__min_samples_split': [2, 5, 10],
+                    'model__min_samples_leaf': [1, 2, 4],
+                    'model__max_features': ['auto', 'sqrt', 'log2'],
                 }
-
                 grid_search = GridSearchCV(
                     pipeline, 
                     param_grid, 
@@ -636,8 +628,8 @@ class RandomForestModel(BaseMLModel):
                     scoring='neg_mean_squared_error',
                     n_jobs=-1
                 )
-
                 grid_search.fit(X_train, y_train)
+                self.set_gridsearch_params(grid_search)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
                 self.is_fitted = True
@@ -661,26 +653,28 @@ class RandomForestModel(BaseMLModel):
                 mse = mean_squared_error(y_test, pred_vals)
                 rmse = sqrt(mse)
                 mae = mean_absolute_error(y_test, pred_vals)
-                return {
-                    "status":"ok",
-                    "R2":r2,
-                    "MSE":mse,
-                    "RMSE":rmse,
-                    "MAE":mae
-                }, build_regression_plots(
+
+                zip_buffer = build_regression_plots(
                     result_column=pred_vals,
                     X = X_test,
                     y = pred_vals,
                     features = X.columns,
                     target = self.target_column
                 )
+
+                return {
+                    "status":"ok",
+                    "R2":r2,
+                    "MSE":mse,
+                    "RMSE":rmse,
+                    "MAE":mae
+                }, zip_buffer
         except Exception as e:
             logging.error("Error while training the model")
             logging.error(e)
             return {
                     "error":str(e)
                 }, None
-
 
     def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
         """Делает предсказания"""
@@ -691,10 +685,12 @@ class RandomForestModel(BaseMLModel):
             target = self.target_column
             if not features or not target:
                 raise ValueError("Could not find an essential column")
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
             for col in features:
                 if col not in given_columns:
                     raise ValueError("Could not find an essential column")
-            result_taret = np.ndarray(self.model.predict(X[features])).reshape(-1, 1)
+            result_taret = np.array(self.model.predict(X[features])).reshape(-1, 1)
             X_extended = X.copy()
             X_extended[target] = result_taret
             return (
@@ -711,4 +707,3 @@ class RandomForestModel(BaseMLModel):
         except Exception as e:
             logging.error("Internal error while fitting the model")
             logging.error(e)
-

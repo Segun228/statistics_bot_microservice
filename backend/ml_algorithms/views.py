@@ -480,6 +480,10 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
                 df,
                 drop_features=False
             )
+            res = ml_model.get_best_gridsearch_params()
+            if res is not None and res and result:
+                result = res | result
+
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
                 predictions_str = json.dumps(result, indent=2)

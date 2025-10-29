@@ -5,7 +5,7 @@ import pandas as pd
 import logging
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 
 class BaseMLModel(ABC):
@@ -22,6 +22,7 @@ class BaseMLModel(ABC):
         self.model = None
         self.is_fitted = False
         self.processed_feature_names = []
+        self.best_params = None
 
     def fit(self, df: pd.DataFrame, drop_features = False) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
         """Полный пайплайн обучения модели."""
@@ -212,4 +213,46 @@ class BaseMLModel(ABC):
         instance.model = model
         instance.is_fitted = True
         instance.processed_feature_names = processed_feature_names
+        instance.best_params = instance.model.named_steps.get('model').get_params()
         return instance
+
+
+    def get_best_gridsearch_params(self) -> Dict[str, Any]:
+        """Получает лучшие параметры из GridSearch (общий для всех моделей)"""
+        if not self.is_fitted or not self.model:
+            return {"status": "error", "message": "Модель не обучена"}
+
+        if self.best_params:
+            return self.best_params
+
+        return {"status": "info", "message": "Модель обучена без GridSearch"}
+
+    def set_gridsearch_params(self, grid_search_obj):
+        self.best_params = self.extract_params_from_gridsearch(grid_search_obj)
+
+    def extract_params_from_gridsearch(self, grid_search_obj) -> Dict[str, Any]:
+        """Извлекает параметры из объекта GridSearch"""
+        try:
+            best_params = grid_search_obj.best_params_
+
+            clean_params = {}
+            for key, value in best_params.items():
+                clean_key = key.split('__')[-1]
+                clean_params[clean_key] = value
+            return self._convert_params_to_serializable(clean_params)
+            
+        except Exception as e:
+            return {"status": "error", "message": f"Не удалось извлечь параметры: {str(e)}"}
+    
+    def _convert_params_to_serializable(self, params: dict) -> dict:
+        """Конвертирует параметры в сериализуемые типы"""
+        serializable_params = {}
+        for key, value in params.items():
+            if hasattr(value, 'item'):
+                serializable_params[key] = value.item()
+            elif isinstance(value, (bool, np.bool_)):
+                serializable_params[key] = bool(value)
+            else:
+                serializable_params[key] = value
+        return serializable_params
+    
