@@ -322,7 +322,8 @@ async def count_n_end(message: Message, state: FSMContext):
             id=dataset_id,
             mde=mde
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -355,7 +356,8 @@ async def count_mde_start(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -460,7 +462,8 @@ async def ztest_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
         result = response if isinstance(response, dict) else json.loads(response.data)
 
@@ -567,7 +570,8 @@ async def ttest_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -671,7 +675,8 @@ async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -778,7 +783,8 @@ async def confirm_u_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -883,7 +889,8 @@ async def confirm_welch_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -999,7 +1006,8 @@ async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1106,7 +1114,8 @@ async def confirm_cramer_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1212,7 +1221,8 @@ async def confirm_ad2_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1318,7 +1328,8 @@ async def confirm_ks_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1434,7 +1445,8 @@ async def confirm_sw_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1551,7 +1563,8 @@ async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1656,7 +1669,8 @@ async def bootstrap_short_end(callback: CallbackQuery, state:FSMContext):
             id=dataset_id,
             iterations = 10000
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1693,7 +1707,8 @@ async def long_bootstrap_finish(message:Message, state:FSMContext):
             id=dataset_id,
             iterations = iterations
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1799,7 +1814,8 @@ async def confirm_confirm_anova_end(callback: CallbackQuery, state:FSMContext):
             telegram_id=callback.from_user.id,
             id=dataset_id,
         )
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
+            logging.error(response)
             raise ValueError("An error occurred during calculation")
 
         result = response if isinstance(response, dict) else json.loads(response.data)
@@ -1907,7 +1923,7 @@ async def finish_cuped(message: Message, state: FSMContext):
             history_df=history_df
         )
 
-        if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+        if not response:
             raise ValueError("Ошибка при выполнении CUPED")
 
         await message.answer(
@@ -2049,7 +2065,7 @@ async def finish_cupac(message: Message, state: FSMContext):
                 history_df=df
             )
 
-            if not response or response.get("status") not in (200, 201, 202, 203, 204, 205):
+            if not response:
                 raise ValueError("Ошибка при выполнении CUPAC")
 
             await message.answer(

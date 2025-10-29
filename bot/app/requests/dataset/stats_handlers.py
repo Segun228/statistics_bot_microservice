@@ -10,7 +10,7 @@ from io import BytesIO
 async def count_n(
     telegram_id,
     id,
-    mde = 5
+    mde = 5.0
 ):
     load_dotenv()
     base_url = os.getenv("BASE_URL")

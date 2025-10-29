@@ -88,14 +88,13 @@ def download_dataset(dataset: Dataset)->BytesIO|None:
             raise ValueError("No URL provided for the dataset.")
         
         response = requests.get(url)
-        if response.status_code != 200:
-            raise ValueError(f"Failed to download. HTTP {response.status_code}")
-
+        if response.status_code not in (200, 201, 202, 203, 204, 205):
+            raise ValueError(f"Failed to download. HTTP {response.status_code} {response.text}")
         return BytesIO(response.content)
-    
     except Exception as e:
         logging.exception("Dataset download failed.")
         local_exception_handler(e)
+
 
 
 def local_exception_handler(e):
@@ -119,7 +118,11 @@ def local_exception_handler(e):
         code = e.status_code
     else:
         code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        logger.exception(f"Unhandled exception: {str(e)}", exc_info=True)
+    logging.error(e)
+    logger.exception(f"Unhandled exception: {str(e)}", exc_info=True)
+    logging.exception(f"Unhandled exception: {str(e)}", exc_info=True)
+    logging.exception(e)
+    logging.error(e)
     return Response({"error": str(e)}, status=code)
 
 
@@ -173,7 +176,9 @@ class CountMDEView(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class SampleSizeView(AuthenticatedAPIView, APIView):
@@ -229,7 +234,9 @@ class SampleSizeView(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 
@@ -284,7 +291,9 @@ class Z_TestView(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 
@@ -338,7 +347,9 @@ class T_TestView(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 
@@ -392,7 +403,9 @@ class Chi_2Sample_TestView(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Cramer_test_View(AuthenticatedAPIView, APIView):
@@ -445,7 +458,9 @@ class Cramer_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class KS_2Sample_test_View(AuthenticatedAPIView, APIView):
@@ -498,7 +513,9 @@ class KS_2Sample_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class U_test_View(AuthenticatedAPIView, APIView):
@@ -551,7 +568,9 @@ class U_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Lilleforce_test_View(AuthenticatedAPIView, APIView):
@@ -603,7 +622,9 @@ class Lilleforce_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Shap_Wilke_test_View(AuthenticatedAPIView, APIView):
@@ -656,7 +677,9 @@ class Shap_Wilke_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Welch_test_View(AuthenticatedAPIView, APIView):
@@ -709,7 +732,9 @@ class Welch_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 
@@ -770,7 +795,9 @@ class Anderson_Darling_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Anderson_Darling_2samle_test_View(AuthenticatedAPIView, APIView):
@@ -823,7 +850,9 @@ class Anderson_Darling_2samle_test_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 
@@ -879,7 +908,9 @@ class Bootstrap_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 
 
 class Cuped_View(AuthenticatedAPIView, APIView):
@@ -950,6 +981,7 @@ class Cuped_View(AuthenticatedAPIView, APIView):
             
         except Exception as e:
             local_exception_handler(e)
+            logging.error(e)
             return Response({"status": 500, "error": str(e)})
 
 
@@ -980,12 +1012,12 @@ class Cupac_View(AuthenticatedAPIView, APIView):
             target_metric_column = request.data.get("target_metric")
             feature_columns = request.data.get("feature_columns")
             if not target_metric_column:
-                logging.error("Error while getting target metric column")
+                logging.exception("Error while getting target metric column")
             if not feature_columns:
-                logging.error("Error while getting feature columns")
+                logging.exception("Error while getting feature columns")
             history_file = request.FILES.get('history_file')
             if not history_file:
-                logging.error("Error while handelling history file")
+                logging.exception("Error while handelling history file")
             history_data_buf = io.BytesIO(history_file.read())
             dataset_buf = download_dataset(dataset)
             if not dataset_buf:
@@ -1021,6 +1053,7 @@ class Cupac_View(AuthenticatedAPIView, APIView):
             return Response({"status": 200, "success": True})
         except Exception as e:
             local_exception_handler(e)
+            logging.error(e)
             return Response({"status": 500, "error": str(e)})
 
 
@@ -1074,5 +1107,7 @@ class ANOVA_View(AuthenticatedAPIView, APIView):
             return result[0]
 
         except Exception as e:
-            local_exception_handler(e)
+            logging.exception(e)
+            logging.error(e)
+            return local_exception_handler(e)
 

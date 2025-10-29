@@ -212,7 +212,7 @@ class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIVi
             buffer.seek(0)
             columns = list(pd.read_csv(buffer).columns)
 
-            dataset.url = CLOUD_URL + key
+            dataset.url = CLOUD_URL + key.replace("statistics-bot-bucket/", "")
             dataset.columns = columns
             dataset.length = records
             dataset.user=request.user
