@@ -870,7 +870,7 @@ async def model_confirm_delete(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("model_put_"))
 async def model_start_refit(callback: CallbackQuery, state: FSMContext):
     try:
-        await state.set_state(DeleteModel.confirm)
+        await state.set_state(PutModel.confirm)
         model_id = callback.data.strip().split("_")[2]
         check_none(model_id)
         model_id = int(model_id)
