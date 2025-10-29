@@ -105,7 +105,6 @@ class CreateModel(StatesGroup):
     type = State()
     name = State()
     description = State()
-    description = State()
     target = State()
     file = State()
 
@@ -132,6 +131,16 @@ class RefitModel(StatesGroup):
 class DeleteModel(StatesGroup):
     confirm = State()
     handle = State()
+
+
+class PutModel(StatesGroup):
+    confirm = State()
+    handle = State()
+    type = State()
+    name = State()
+    description = State()
+    target = State()
+    file = State()
 
 
 class GenerateSample(StatesGroup):

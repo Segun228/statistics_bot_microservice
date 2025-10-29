@@ -58,10 +58,11 @@ from app.requests.dataset.patch_errors.patch_errors import patch_errors
 from app.requests.dataset.patch_categories.patch_groups import set_groups
 
 from app.keyboards.reply_dataset import create_reply_column_keyboard_group
-from app.states.states import FitModel, RefitModel, PredictModel, DeleteModel, GenerateSample
+from app.states.states import FitModel, RefitModel, PredictModel, DeleteModel, GenerateSample, PutModel
 
 
 from app.requests.dataset import stats_handlers
+from app.requests.put.put_model import put_model
 from app.requests.ml_models.get_all_models import get_all_models, retrieve_model, post_model, delete_model
 from app.requests.ml_models.mlflow import fit_model, refit_model, predict_model
 from math import floor, ceil
@@ -767,9 +768,9 @@ async def model_confirm_refit(callback: CallbackQuery, state: FSMContext):
         if not mod or mod is None:
             raise ValueError("Error while getting single model")
         await callback.message.answer(
-            "\n\n".join(mod.get("columns")),
+            "\n\n".join(mod.get("features")),
         )
-        await state.update_data(columns = mod.get("columns"))
+        await state.update_data(features = mod.get("features"))
         await state.update_data(target = mod.get("target"))
     except Exception as e:
         logging.exception(e)
@@ -862,10 +863,83 @@ async def model_confirm_delete(callback: CallbackQuery, state: FSMContext):
 
 
 #==============================================================================================================
-# Полное реобучение модели
+# Редактирование модели
 #==============================================================================================================
 
 
-@router.callback_query(F.data.startswith("model_refit_"))
-async def model_start_delete(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith("model_put_"))
+async def model_start_refit(callback: CallbackQuery, state: FSMContext):
+    try:
+        await state.set_state(DeleteModel.confirm)
+        model_id = callback.data.strip().split("_")[2]
+        check_none(model_id)
+        model_id = int(model_id)
+        await callback.message.answer("Внимание!\n\nВы собираетесь начать изменение параметров модели, вы уверены?", reply_markup=inline_keyboards.confirm(model_id))
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
+
+@router.callback_query(F.data.startswith("decline_"), PutModel.confirm)
+async def model_decline_put(callback: CallbackQuery, state: FSMContext):
+    try:
+        await state.clear()
+        await callback.message.answer("Редактирование модели отменено", reply_markup=inline_user_keyboards.catalogue)
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+@router.callback_query(F.data.startswith("confirm_"), PutModel.confirm)
+async def model_confirm_put(callback: CallbackQuery, state: FSMContext):
+    try:
+        model_id = int(callback.data.strip().split("_")[1])
+        await state.update_data(model_id = model_id)
+        await callback.message.answer(
+            "Введите имя модели"
+        )
+        await state.set_state(PutModel.name)
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+@router.message(PutModel.name)
+async def model_set_name_put(message:Message, state:FSMContext):
+    try:
+        name = message.text.strip()
+        await state.update_data(name = name)
+        await message.answer(
+            "Введите описание модели"
+        )
+        await state.set_state(PutModel.description)
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+@router.message(PutModel.description)
+async def model_set_description_put(message:Message, state:FSMContext):
+    try:
+        description = message.text.strip()
+        data = await state.get_data()
+        name = data.get("name")
+        await message.answer(
+            "Перезаписываю вашу модель..."
+        )
+        model_id = data.get("model_id")
+        response = await put_model(
+            model_id = model_id,
+            telegram_id = message.from_user.id,
+            name = name,
+            description = description
+        )
+        if response:
+            await message.answer(
+                "Ваша модель успешно изменена!",
+                reply_markup = inline_user_keyboards.catalogue
+            )
+        await state.clear()
+    except Exception as e:
+        logging.exception(e)
+        await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)

@@ -38,6 +38,22 @@ class BaseMLModel(ABC):
             logging.error(f"Ошибка при обучении модели: {e}")
             raise
 
+    def refit(self, df: pd.DataFrame) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
+        """Полный пайплайн  реобучения модели."""
+        try:
+            self.is_fitted = False
+            df_processed = self._prepare_data(df)
+            X = df_processed[self.processed_feature_names]
+            y = df_processed[self.target_column]
+            response, img_zip = self._train(X, y)
+            self.model = None
+            self.is_fitted = False
+            logging.info(f"Модель успешно реобучена на {len(self.processed_feature_names)} признаках")
+            return self, response, img_zip
+        except Exception as e:
+            logging.error(f"Ошибка при обучении модели: {e}")
+            raise
+
     @abstractmethod
     def _train(self, X: pd.DataFrame, y: pd.Series)->Tuple[dict|None, io.BytesIO|None]:
         """Внутренний метод обучения - реализуется в подклассах."""
