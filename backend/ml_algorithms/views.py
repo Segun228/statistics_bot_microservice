@@ -400,11 +400,84 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
 
     serializer_class = ML_ModelSerializer
 
-    def post(self, request, model_id, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        model_id = int(self.kwargs.get('model_id'))
+        model = self.get_queryset().filter(id=model_id).first()
         
-        queryset = self.get_queryset().filter(id = model_id)
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(data=serializer.data)
+        if not model:
+            return Response({"error": "Model not found", "status":404}, status=404)
+        
+        get_url = model.get_url
+        if not get_url:
+            return Response({"error": "No model URL found"}, status=400)
+        try:
+            response = requests.get(get_url)
+            response.raise_for_status()
+            sklearn_ml_model = joblib.load(BytesIO(response.content))
+            if not model.features:
+                raise Exception("Could not reach model`s features")
+            ml_model = get_class(model.type).reborn(
+                target_column=model.target,
+                feature_columns=model.features,
+                model = sklearn_ml_model,
+                processed_feature_names=model.features
+            )
+        except Exception as e:
+            logging.error(f"Model loading failed: {e}")
+            return Response({"error": "Failed to load model"}, status=500)
+        csv_file = request.FILES.get("file")
+        if not csv_file:
+            return Response({"error": "CSV file is required"}, status=400)
+        
+        try:
+            buffer = BytesIO()
+            for chunk in csv_file.chunks():
+                buffer.write(chunk)
+            buffer.seek(0)
+            df = pd.read_csv(buffer)
+
+            try:
+                df_selected = df[model.features].copy()
+            except KeyError as e:
+                return Response({"error": f"Feature selection failed: {e}"}, status=400)
+
+            try:
+                for col in df_selected.columns:
+                    if df_selected[col].dtype == 'object':
+                        df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
+                df_clean = df_selected.dropna()
+                
+                if len(df_clean) == 0:
+                    return Response({"error": "No valid numeric data after cleaning"}, status=400)
+
+            except Exception as e:
+                return Response({"error": f"Data type conversion failed: {e}"}, status=400)
+
+
+        except Exception as e:
+            logging.error(f"CSV processing failed: {e}")
+            return Response({"error": "Invalid CSV file"}, status=400)
+
+        try:
+
+
+            new_model, result, img_zip = ml_model.fit(df)
+
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                predictions_str = json.dumps(result, indent=2)
+                zip_file.writestr('predictions.json', predictions_str)
+                if img_zip:
+                    zip_file.writestr('images.zip', img_zip.read())
+            zip_buffer.seek(0)
+            return HttpResponse(
+                zip_buffer.getvalue(),
+                content_type='application/zip',
+                headers={'Content-Disposition': 'attachment; filename="ml_results.zip"'}
+            )
+        except Exception as e:
+            logging.error(f"Prediction failed: {e}")
+            return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
 
 
 

@@ -484,7 +484,6 @@ async def finish_prediction(message: Message, state: FSMContext, bot: Bot):
                         await message.answer("❌ В архиве не найден файл с предсказаниями")
                         
             except zipfile.BadZipFile:
-                # Если не ZIP, пробуем показать что пришло
                 try:
                     error_text = response.decode('utf-8')
                     if error_text.startswith('{'):
@@ -621,7 +620,7 @@ async def model_enter_noise(message: Message, state: FSMContext, bot:Bot):
 async def model_make_fit(callback: CallbackQuery, state: FSMContext):
     try:
         model_id = int(callback.data.strip().split("_")[2])
-        await callback.message.answer("Вам будет необходимо сбросить файл с значениями признаков. Внимание, все строки с пустыми значениями будут удалены")
+        await callback.message.answer("Вам будет необходимо сбросить файл с значениями признаков и таргета. Внимание, все строки с пустыми значениями будут удалены")
         await state.set_state(FitModel.start_fit)
         await state.update_data(id = model_id)
         mod = await retrieve_model(
@@ -631,9 +630,9 @@ async def model_make_fit(callback: CallbackQuery, state: FSMContext):
         if not mod or mod is None:
             raise ValueError("Error while getting single model")
         await callback.message.answer(
-            "\n\n".join(mod.get("columns")),
+            "\n\n".join(mod.get("features")),
         )
-        await state.update_data(columns = mod.get("columns"))
+        await state.update_data(features = mod.get("features"))
         await state.update_data(target = mod.get("target"))
     except Exception as e:
         logging.exception(e)
@@ -668,10 +667,58 @@ async def finish_fit(message: Message, state: FSMContext, bot:Bot):
                 raise Exception(f"The column {col} was not found")
         response = await fit_model(
             telegram_id = message.from_user.id,
-            model_id = data,
+            model_id = data.get("id"),
             df = df
         )
-        await message.answer(f"{response if response else "Модель успешно доучена!"}")
+        await state.clear()
+        if response and len(response) > 0:
+            try:
+                zip_buffer = BytesIO(response)
+                with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+                    if 'predictions.json' in zip_file.namelist():
+                        with zip_file.open('predictions.json') as json_file:
+                            json_data = json_file.read()
+                        js = json.loads(json_data)
+                        result_str = ""
+                        for key, value in js.items():
+                            result_str += f"{key}: {value}\n\n"
+                        await message.answer(
+                            result_str,
+                        )
+                        if 'images.zip' in zip_file.namelist():
+                            await message.answer("📈 Генерирую графики...")
+                            with zip_file.open('images.zip') as images_zip:
+                                images_data = images_zip.read()
+                                images_buffer = BytesIO(images_data)
+                            with zipfile.ZipFile(images_buffer, 'r') as images_archive:
+                                for image_name in images_archive.namelist():
+                                    if image_name.endswith('.png'):
+                                        with images_archive.open(image_name) as img_file:
+                                            img_data = img_file.read()
+                                            await message.answer_photo(
+                                                photo=BufferedInputFile(img_data, filename=image_name),
+                                                caption=f"📈 {image_name.replace('.png', '')}"
+                                            )
+                    else:
+                        await message.answer("❌ В архиве не найден файл с предсказаниями")
+                        
+            except zipfile.BadZipFile:
+                try:
+                    error_text = response.decode('utf-8')
+                    if error_text.startswith('{'):
+                        error_data = json.loads(error_text)
+                        await message.answer(f"❌ Ошибка: {error_data.get('error', 'Unknown error')}")
+                    else:
+                        await message.answer(f"❌ Ошибка сервера: {error_text[:500]}")
+                except Exception as e:
+                    logging.exception(e)
+                    await message.answer("❌ Неизвестный формат ответа от сервера")
+            except Exception as e:
+                logging.exception(e)
+                await message.answer(f"❌ Ошибка при обработке архива: {str(e)}")
+        else:
+            await message.answer("❌ Сервер не вернул данные")
+            
         await state.clear()
     except Exception as e:
         logging.exception(e)
@@ -681,6 +728,8 @@ async def finish_fit(message: Message, state: FSMContext, bot:Bot):
 #==============================================================================================================
 # Обучение модели с нуля
 #==============================================================================================================
+
+
 @router.callback_query(F.data.startswith("model_refit_"))
 async def model_start_make_refit(callback: CallbackQuery, state: FSMContext):
     try:
@@ -810,3 +859,13 @@ async def model_confirm_delete(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+#==============================================================================================================
+# Полное реобучение модели
+#==============================================================================================================
+
+
+@router.callback_query(F.data.startswith("model_refit_"))
+async def model_start_delete(callback: CallbackQuery, state: FSMContext):
+
