@@ -107,6 +107,7 @@ class CreateModel(StatesGroup):
     description = State()
     target = State()
     file = State()
+    features = State()
 
 
 class PredictModel(StatesGroup):

@@ -11,7 +11,7 @@ import pandas as pd
 MODEL_REGISTRY = {
     # === Regression ===
     "linear_regression": LinearRegressionModel,
-    "polynomial_regression": PolynomialRegressionModel,
+    "polinomial_regression": PolynomialRegressionModel,
     "knn_regression": KNNRegressionModel,
     "gradient_boosting_regression": GradientBoostingRegressionModel,
     "random_forest_regression": RandomForestModel,

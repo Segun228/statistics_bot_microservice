@@ -286,17 +286,37 @@ async def select_model_description(message:Message, state: FSMContext):
 
 
 @router.message(CreateModel.description)
-async def load_model_file(message:Message, state: FSMContext):
+async def select_drop_features(message:Message, state: FSMContext):
     try:
-        await state.set_state(CreateModel.file)
+        await state.set_state(CreateModel.features)
         description = message.text.strip()
         await state.update_data(description = description)
         await message.answer(
-            "Загрузите CSV файл с вашим датасетом"
+            "Вы хотите, чтобы я убрал бесполезные или линейно зависимые признаки?",
+            reply_markup=inline_keyboards.confirm(model_id = 1)
         )
     except Exception as e:
         logging.exception(e)
         await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+
+
+
+@router.callback_query(CreateModel.features)
+async def load_model_file(callback:CallbackQuery, state: FSMContext):
+    try:
+        if callback.data.startswith("confirm_"):
+            await state.update_data(drop_features = True)
+        else:
+            await state.update_data(drop_features = False)
+        await state.set_state(CreateModel.file)
+        description = callback.message.text.strip()
+        await state.update_data(description = description)
+        await callback.message.answer(
+            "Загрузите CSV файл с вашим датасетом"
+        )
+    except Exception as e:
+        logging.exception(e)
+        await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
 
 
 @router.message(F.document, CreateModel.file)
@@ -318,7 +338,7 @@ async def get_model_dataset_file_message(message: Message, state: FSMContext, bo
         buffer.seek(0)
         cols = df.columns
         await state.update_data(columns = cols)
-        await message.answer("Выберите колоку с таргетом", reply_markup=inline_keyboards.select_target_column(columns = cols))
+        await message.answer("Выберите колонку с таргетом", reply_markup=inline_keyboards.select_target_column(columns = cols))
     except Exception as e:
         logging.exception(e)
         logging.error("Error while loading the dataset")
@@ -326,7 +346,6 @@ async def get_model_dataset_file_message(message: Message, state: FSMContext, bo
 
 @router.callback_query(CreateModel.target)
 async def finish_creation(callback: CallbackQuery, state: FSMContext):
-    from pprint import pprint
     try:
         data = await state.get_data()
         columns = data.get("columns", [])
@@ -335,6 +354,7 @@ async def finish_creation(callback: CallbackQuery, state: FSMContext):
         description = data.get("description")
         type = data.get("type")
         task = data.get("task")
+        drop_features = data.get("drop_features")
         dataset = data.get("dataset")
         features = [el for el in columns if el != target]
         response = await post_model(
@@ -345,14 +365,17 @@ async def finish_creation(callback: CallbackQuery, state: FSMContext):
             target = target,
             features = list(features),
             task = task,
-            type = type
+            type = type,
+            drop_features = drop_features
         )
-        await callback.message.answer("Модель создана! Теперь вы можете делать предсказания, дообучать или обучать модель заново")
-        await callback.message.answer("Обратите внимание, что часть признаков могла быть убрана как неэффективные или деструктивные",
-            reply_markup=inline_user_keyboards.catalogue
-        )
+        if response:
+            await callback.message.answer("Модель создана! Теперь вы можете делать предсказания, дообучать или обучать модель заново")
+            await callback.message.answer("Обратите внимание, что часть признаков могла быть убрана как неэффективные или деструктивные",
+                reply_markup=inline_user_keyboards.catalogue
+            )
+        else:
+            raise Exception("Error while creating a model")
         await state.clear()
-
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка при обработке результатов, попробуйте позже.", 

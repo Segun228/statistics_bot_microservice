@@ -54,6 +54,19 @@ load_dotenv()
 
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
+
+def decode_bool(val)->bool:
+    if type(val) is bool:
+        return val
+    elif not val:
+        return False
+    elif str(val) in ("true", "t", "tr", "1", "y", "yes"):
+        return True
+    else:
+        return False
+
+
+
 def rewrite_supabase_url_to_root(upload_url: str) -> str:
     filename = upload_url.rstrip("/").split("/")[-1]
     pattern = r"(https://[^/]+/storage/v1/object)/public/([^/]+)/.+"
@@ -216,6 +229,7 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             model.description = request.POST.get("description", f"{model.task} undefined {model.type} model")
             request_features = request.POST.get("features")
             request_target = request.POST.get("target")
+            drop_features = decode_bool(request.POST.get("drop_reatures", False))
 
             if not request_features or not request_target:
                 raise ValueError("Feature and target fields are required")
@@ -238,7 +252,8 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
                 target_column= request_target,
             )
             model_object, resp, img_zip = model_object.fit(
-                df = df
+                df = df,
+                drop_features=drop_features
             )
 
             final_features = model_object.get_features()
@@ -461,8 +476,10 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
         try:
 
 
-            new_model, result, img_zip = ml_model.fit(df)
-
+            new_model, result, img_zip = ml_model.fit(
+                df,
+                drop_features=False
+            )
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
                 predictions_str = json.dumps(result, indent=2)

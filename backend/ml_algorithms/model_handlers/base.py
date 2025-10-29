@@ -23,10 +23,10 @@ class BaseMLModel(ABC):
         self.is_fitted = False
         self.processed_feature_names = []
 
-    def fit(self, df: pd.DataFrame) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
+    def fit(self, df: pd.DataFrame, drop_features = False) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
         """Полный пайплайн обучения модели."""
         try:
-            df_processed = self._prepare_data(df)
+            df_processed = self._prepare_data(df, drop_features=drop_features)
             X = df_processed[self.processed_feature_names]
             y = df_processed[self.target_column]
             response, img_zip = self._train(X, y)
@@ -64,7 +64,7 @@ class BaseMLModel(ABC):
         """Делает предсказания."""
         raise NotImplementedError
 
-    def _prepare_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _prepare_data(self, df: pd.DataFrame, drop_features = False) -> pd.DataFrame:
         """Подготовка данных: отбор признаков, кодирование."""
         if self.target_column not in df.columns:
             raise ValueError(f"Целевая переменная '{self.target_column}' не найдена в данных")
@@ -78,7 +78,8 @@ class BaseMLModel(ABC):
 
         working_df = df[self.feature_columns + [self.target_column]].copy()
 
-        working_df, selected_columns = self._feature_analyzer(working_df)
+        if drop_features:
+            working_df, selected_columns = self._feature_analyzer(working_df)
 
         working_df = self._feature_encoder(working_df)
 

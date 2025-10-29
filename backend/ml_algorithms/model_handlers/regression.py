@@ -247,23 +247,19 @@ class PolynomialRegressionModel(BaseMLModel):
                     ('model', Ridge(random_state=42))
                 ])
                 pipeline.fit(X_train, y_train)
-
                 y_pred = pipeline.predict(X_test)
-
                 mse = mean_squared_error(y_test, y_pred)
                 mae = mean_absolute_error(y_test, y_pred)
                 r2 = r2_score(y_test, y_pred)
-
                 print(f"MSE: {mse:.4f}")
                 print(f"RMSE: {np.sqrt(mse):.4f}")
                 print(f"MAE: {mae:.4f}")
                 print(f"R²: {r2:.4f}")
-
                 param_grid = {
-                    'degree': np.arange(1, 5),
+                    'poly__degree': [1, 2, 3, 4],
                     'model__alpha': [0.0001, 0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10, 50, 100, 200],
+                    'model__solver': ['auto', 'svd', 'cholesky', 'lsqr']
                 }
-
                 grid_search = GridSearchCV(
                     pipeline, 
                     param_grid, 
@@ -271,7 +267,6 @@ class PolynomialRegressionModel(BaseMLModel):
                     scoring='neg_mean_squared_error',
                     n_jobs=-1
                 )
-
                 grid_search.fit(X_train, y_train)
                 best_pipeline = grid_search.best_estimator_
                 self.model = best_pipeline
@@ -296,26 +291,28 @@ class PolynomialRegressionModel(BaseMLModel):
                 mse = mean_squared_error(y_test, pred_vals)
                 rmse = sqrt(mse)
                 mae = mean_absolute_error(y_test, pred_vals)
-                return {
-                    "status":"ok",
-                    "R2":r2,
-                    "MSE":mse,
-                    "RMSE":rmse,
-                    "MAE":mae
-                }, build_regression_plots(
+
+                zip_buffer = build_regression_plots(
                     result_column=pred_vals,
                     X = X_test,
                     y = pred_vals,
                     features = X.columns,
                     target = self.target_column
                 )
+
+                return {
+                    "status":"ok",
+                    "R2":r2,
+                    "MSE":mse,
+                    "RMSE":rmse,
+                    "MAE":mae
+                }, zip_buffer
         except Exception as e:
             logging.error("Error while training the model")
             logging.error(e)
             return {
                     "error":str(e)
                 }, None
-
 
     def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
         """Делает предсказания"""
@@ -326,10 +323,12 @@ class PolynomialRegressionModel(BaseMLModel):
             target = self.target_column
             if not features or not target:
                 raise ValueError("Could not find an essential column")
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
             for col in features:
                 if col not in given_columns:
                     raise ValueError("Could not find an essential column")
-            result_taret = np.ndarray(self.model.predict(X[features])).reshape(-1, 1)
+            result_taret = np.array(self.model.predict(X[features])).reshape(-1, 1)
             X_extended = X.copy()
             X_extended[target] = result_taret
             return (

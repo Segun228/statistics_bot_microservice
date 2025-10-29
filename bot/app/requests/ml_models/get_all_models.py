@@ -81,7 +81,8 @@ async def post_model(
     target,
     features,
     task,
-    type
+    type,
+    drop_features
 ):
     load_dotenv()
     base_url = os.getenv("BASE_URL")
@@ -110,6 +111,7 @@ async def post_model(
         form.add_field("type", type)
         form.add_field("target", target)
         form.add_field("features", json.dumps(features))
+        form.add_field("drop_features", str(drop_features))
         csv_buffer.seek(0)
         form.add_field(
             "file",
