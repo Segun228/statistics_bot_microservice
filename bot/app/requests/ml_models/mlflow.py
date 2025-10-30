@@ -52,6 +52,7 @@ async def fit_model(
         async with session.post(
             exact_url,
             headers=headers,
+            timeout=aiohttp.ClientTimeout(total=60),
             data=form
         ) as response:
             if response.status in (200, 201, 202, 203):
@@ -99,6 +100,7 @@ async def refit_model(
         async with session.post(
             exact_url,
             headers=headers,
+            timeout=aiohttp.ClientTimeout(total=60),
             data=form
         ) as response:
             if response.status in (200, 201, 202, 203):
@@ -148,6 +150,7 @@ async def predict_model(
         async with session.post(
             exact_url,
             headers=headers,
+            timeout=aiohttp.ClientTimeout(total=60),
             data=form
         ) as response:
             if response.status in (200, 201, 202, 203):

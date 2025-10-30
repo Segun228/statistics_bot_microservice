@@ -33,6 +33,7 @@ async def get_all_models(telegram_id, model_task=None, model_type = None):
         async with session.post(
             exact_url, 
             headers=headers,
+            timeout=aiohttp.ClientTimeout(total=60),
             data=data
         ) as response:
             if response.status in (200, 201, 202, 203):
