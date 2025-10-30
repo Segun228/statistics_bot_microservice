@@ -298,9 +298,13 @@ class ML_model_ListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPI
             return response
         """
         except Exception as e:
-            logging.error(e)
             model.delete()
-            raise
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 
@@ -416,90 +420,95 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
     serializer_class = ML_ModelSerializer
 
     def post(self, request, *args, **kwargs):
-        model_id = int(self.kwargs.get('model_id'))
-        model = self.get_queryset().filter(id=model_id).first()
-        
-        if not model:
-            return Response({"error": "Model not found", "status":404}, status=404)
-        
-        get_url = model.get_url
-        if not get_url:
-            return Response({"error": "No model URL found"}, status=400)
         try:
-            response = requests.get(get_url)
-            response.raise_for_status()
-            sklearn_ml_model = joblib.load(BytesIO(response.content))
-            if not model.features:
-                raise Exception("Could not reach model`s features")
-            ml_model = get_class(model.type).reborn(
-                target_column=model.target,
-                feature_columns=model.features,
-                model = sklearn_ml_model,
-                processed_feature_names=model.features
-            )
-        except Exception as e:
-            logging.error(f"Model loading failed: {e}")
-            return Response({"error": "Failed to load model"}, status=500)
-        csv_file = request.FILES.get("file")
-        if not csv_file:
-            return Response({"error": "CSV file is required"}, status=400)
-        
-        try:
-            buffer = BytesIO()
-            for chunk in csv_file.chunks():
-                buffer.write(chunk)
-            buffer.seek(0)
-            df = pd.read_csv(buffer)
-
+            model_id = int(self.kwargs.get('model_id'))
+            model = self.get_queryset().filter(id=model_id).first()
+            
+            if not model:
+                return Response({"error": "Model not found", "status":404}, status=404)
+            
+            get_url = model.get_url
+            if not get_url:
+                return Response({"error": "No model URL found"}, status=400)
             try:
-                df_selected = df[model.features].copy()
-            except KeyError as e:
-                return Response({"error": f"Feature selection failed: {e}"}, status=400)
-
+                response = requests.get(get_url)
+                response.raise_for_status()
+                sklearn_ml_model = joblib.load(BytesIO(response.content))
+                if not model.features:
+                    raise Exception("Could not reach model`s features")
+                ml_model = get_class(model.type).reborn(
+                    target_column=model.target,
+                    feature_columns=model.features,
+                    model = sklearn_ml_model,
+                    processed_feature_names=model.features
+                )
+            except Exception as e:
+                logging.error(f"Model loading failed: {e}")
+                return Response({"error": "Failed to load model"}, status=500)
+            csv_file = request.FILES.get("file")
+            if not csv_file:
+                return Response({"error": "CSV file is required"}, status=400)
+            
             try:
-                for col in df_selected.columns:
-                    if df_selected[col].dtype == 'object':
-                        df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
-                df_clean = df_selected.dropna()
-                
-                if len(df_clean) == 0:
-                    return Response({"error": "No valid numeric data after cleaning"}, status=400)
+                buffer = BytesIO()
+                for chunk in csv_file.chunks():
+                    buffer.write(chunk)
+                buffer.seek(0)
+                df = pd.read_csv(buffer)
+
+                try:
+                    df_selected = df[model.features].copy()
+                except KeyError as e:
+                    return Response({"error": f"Feature selection failed: {e}"}, status=400)
+
+                try:
+                    for col in df_selected.columns:
+                        if df_selected[col].dtype == 'object':
+                            df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
+                    df_clean = df_selected.dropna()
+                    
+                    if len(df_clean) == 0:
+                        return Response({"error": "No valid numeric data after cleaning"}, status=400)
+
+                except Exception as e:
+                    return Response({"error": f"Data type conversion failed: {e}"}, status=400)
+
 
             except Exception as e:
-                return Response({"error": f"Data type conversion failed: {e}"}, status=400)
+                logging.error(f"CSV processing failed: {e}")
+                return Response({"error": "Invalid CSV file"}, status=400)
 
+            try:
+                new_model, result, img_zip = ml_model.fit(
+                    df,
+                    drop_features=False
+                )
+                res = ml_model.get_best_gridsearch_params()
+                if res is not None and res and result:
+                    result = res | result
 
+                zip_buffer = BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                    predictions_str = json.dumps(result, indent=2)
+                    zip_file.writestr('predictions.json', predictions_str)
+                    if img_zip:
+                        zip_file.writestr('images.zip', img_zip.read())
+                zip_buffer.seek(0)
+                return HttpResponse(
+                    zip_buffer.getvalue(),
+                    content_type='application/zip',
+                    headers={'Content-Disposition': 'attachment; filename="ml_results.zip"'}
+                )
+            except Exception as e:
+                logging.error(f"Prediction failed: {e}")
+                return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
         except Exception as e:
-            logging.error(f"CSV processing failed: {e}")
-            return Response({"error": "Invalid CSV file"}, status=400)
-
-        try:
-
-
-            new_model, result, img_zip = ml_model.fit(
-                df,
-                drop_features=False
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            res = ml_model.get_best_gridsearch_params()
-            if res is not None and res and result:
-                result = res | result
-
-            zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                predictions_str = json.dumps(result, indent=2)
-                zip_file.writestr('predictions.json', predictions_str)
-                if img_zip:
-                    zip_file.writestr('images.zip', img_zip.read())
-            zip_buffer.seek(0)
-            return HttpResponse(
-                zip_buffer.getvalue(),
-                content_type='application/zip',
-                headers={'Content-Disposition': 'attachment; filename="ml_results.zip"'}
-            )
-        except Exception as e:
-            logging.error(f"Prediction failed: {e}")
-            return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
-
 
 
 class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
@@ -509,20 +518,30 @@ class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
 
     serializer_class = ML_ModelSerializer
 
-    def get(self, request, *args, **kwargs):
-        task = request.GET.get("task")
-        type = request.GET.get("type")
-        
-        queryset = self.get_queryset()
-        
-        if task:
-            queryset = queryset.filter(task=task, type=type)
-        if type:
-            queryset = queryset.filter(type=type)
-        
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(data=serializer.data)
+    def post(self, request, *args, **kwargs):
+        try:
+            task = request.POST.get("task")
 
+            queryset = ML_Model.objects.filter(user=request.user)
+            logging.debug(f"🔍 TOTAL USER MODELS: {queryset.count()}")
+
+            if task:
+                queryset = queryset.filter(task=task)
+                logging.debug(f"🔍 AFTER TASK FILTER: {queryset.count()}")
+
+            for model in queryset:
+                logging.debug(f"🔍 MODEL: {model.id}, {model.name}, {model.task}, {model.type}")
+
+            serializer = ML_ModelSerializer(queryset, many=True)
+            logging.debug(f"🔍 SERIALIZED DATA: {serializer.data}")
+            return Response(data=serializer.data)
+        except Exception as e:
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ML_models_RefitAPIView(AuthenticatedAPIView, APIView):    
     lookup_field = 'id'
@@ -534,82 +553,88 @@ class ML_models_RefitAPIView(AuthenticatedAPIView, APIView):
     serializer_class = ML_ModelSerializer
 
     def post(self, request, *args, **kwargs):
-        model_id = int(self.kwargs.get('model_id'))
-        model = self.get_queryset().filter(id=model_id).first()
-        
-        if not model:
-            return Response({"error": "Model not found", "status":404}, status=404)
-        
-        get_url = model.get_url
-        if not get_url:
-            return Response({"error": "No model URL found"}, status=400)
         try:
-            response = requests.get(get_url)
-            response.raise_for_status()
-            sklearn_ml_model = joblib.load(BytesIO(response.content))
-            if not model.features:
-                raise Exception("Could not reach model`s features")
-            ml_model = get_class(model.type).reborn(
-                target_column=model.target,
-                feature_columns=model.features,
-                model = sklearn_ml_model,
-                processed_feature_names=model.features
-            )
-        except Exception as e:
-            logging.error(f"Model loading failed: {e}")
-            return Response({"error": "Failed to load model"}, status=500)
-        csv_file = request.FILES.get("file")
-        if not csv_file:
-            return Response({"error": "CSV file is required"}, status=400)
-        
-        try:
-            buffer = BytesIO()
-            for chunk in csv_file.chunks():
-                buffer.write(chunk)
-            buffer.seek(0)
-            df = pd.read_csv(buffer)
-
+            model_id = int(self.kwargs.get('model_id'))
+            model = self.get_queryset().filter(id=model_id).first()
+            
+            if not model:
+                return Response({"error": "Model not found", "status":404}, status=404)
+            
+            get_url = model.get_url
+            if not get_url:
+                return Response({"error": "No model URL found"}, status=400)
             try:
-                df_selected = df[model.features].copy()
-            except KeyError as e:
-                return Response({"error": f"Feature selection failed: {e}"}, status=400)
-
+                response = requests.get(get_url)
+                response.raise_for_status()
+                sklearn_ml_model = joblib.load(BytesIO(response.content))
+                if not model.features:
+                    raise Exception("Could not reach model`s features")
+                ml_model = get_class(model.type).reborn(
+                    target_column=model.target,
+                    feature_columns=model.features,
+                    model = sklearn_ml_model,
+                    processed_feature_names=model.features
+                )
+            except Exception as e:
+                logging.error(f"Model loading failed: {e}")
+                return Response({"error": "Failed to load model"}, status=500)
+            csv_file = request.FILES.get("file")
+            if not csv_file:
+                return Response({"error": "CSV file is required"}, status=400)
+            
             try:
-                for col in df_selected.columns:
-                    if df_selected[col].dtype == 'object':
-                        df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
-                df_clean = df_selected.dropna()
-                
-                if len(df_clean) == 0:
-                    return Response({"error": "No valid numeric data after cleaning"}, status=400)
+                buffer = BytesIO()
+                for chunk in csv_file.chunks():
+                    buffer.write(chunk)
+                buffer.seek(0)
+                df = pd.read_csv(buffer)
+
+                try:
+                    df_selected = df[model.features].copy()
+                except KeyError as e:
+                    return Response({"error": f"Feature selection failed: {e}"}, status=400)
+
+                try:
+                    for col in df_selected.columns:
+                        if df_selected[col].dtype == 'object':
+                            df_selected[col] = pd.to_numeric(df_selected[col], errors='coerce')
+                    df_clean = df_selected.dropna()
+                    
+                    if len(df_clean) == 0:
+                        return Response({"error": "No valid numeric data after cleaning"}, status=400)
+
+                except Exception as e:
+                    return Response({"error": f"Data type conversion failed: {e}"}, status=400)
 
             except Exception as e:
-                return Response({"error": f"Data type conversion failed: {e}"}, status=400)
+                logging.error(f"CSV processing failed: {e}")
+                return Response({"error": "Invalid CSV file"}, status=400)
 
+            try:
+                new_model, result, img_zip = ml_model.refit(df)
 
+                zip_buffer = BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                    predictions_str = json.dumps(result, indent=2)
+                    zip_file.writestr('predictions.json', predictions_str)
+                    if img_zip:
+                        zip_file.writestr('images.zip', img_zip.read())
+                zip_buffer.seek(0)
+                return HttpResponse(
+                    zip_buffer.getvalue(),
+                    content_type='application/zip',
+                    headers={'Content-Disposition': 'attachment; filename="ml_results.zip"'}
+                )
+            except Exception as e:
+                logging.error(f"Prediction failed: {e}")
+                return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
         except Exception as e:
-            logging.error(f"CSV processing failed: {e}")
-            return Response({"error": "Invalid CSV file"}, status=400)
-
-        try:
-            new_model, result, img_zip = ml_model.refit(df)
-
-            zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                predictions_str = json.dumps(result, indent=2)
-                zip_file.writestr('predictions.json', predictions_str)
-                if img_zip:
-                    zip_file.writestr('images.zip', img_zip.read())
-            zip_buffer.seek(0)
-            return HttpResponse(
-                zip_buffer.getvalue(),
-                content_type='application/zip',
-                headers={'Content-Disposition': 'attachment; filename="ml_results.zip"'}
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        except Exception as e:
-            logging.error(f"Prediction failed: {e}")
-            return Response({"error": f"Prediction failed: {str(e)}"}, status=500)
-
 
 
 class ML_models_get_ListAPIView(AuthenticatedAPIView, APIView):
@@ -620,10 +645,17 @@ class ML_models_get_ListAPIView(AuthenticatedAPIView, APIView):
     serializer_class = ML_ModelSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(data=serializer.data)
-
+        try:
+            queryset = self.get_queryset()
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(data=serializer.data)
+        except Exception as e:
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ML_models_get_RetrieveAPIView(AuthenticatedAPIView, RetrieveUpdateDestroyAPIView):
@@ -646,4 +678,11 @@ class ML_models_get_RetrieveAPIView(AuthenticatedAPIView, RetrieveUpdateDestroyA
             return Response(
                 {"error": "Model not found or access denied"}, 
                 status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logging.error(e)
+            logging.exception(e)
+            return Response(
+                {"error": f"Internal server error: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

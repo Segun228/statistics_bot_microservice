@@ -108,10 +108,13 @@ async def get_ml_task_menu(callback: CallbackQuery, state: FSMContext):
 async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext):
     try:
         task_type = callback.data.split("_")[1].strip()
+        logging.info("Retrieving models with task:", task_type)
         models = await get_all_models(
             telegram_id=callback.from_user.id,
             model_task=task_type
         )
+        if not models or models is None:
+            raise ValueError("Error while getting the models")
         await callback.message.answer(
             "Выберите существующую модель или создайте новую",
             reply_markup= inline_keyboards.list_ml_models(
@@ -199,10 +202,6 @@ def format_model_info(model_dict) -> str:
 {features_text}
 
 {emoji['target']} <b>Целевая переменная:</b> <code>{target}</code>
-
-{emoji['dates']} <b>Даты:</b>
-├ Создана: <code>{created}</code>
-└ Обновлена: <code>{updated}</code>
 
 <b>🆔 ID модели:</b> <code>{model_id}</code>
 """
@@ -627,7 +626,7 @@ async def model_enter_noise(message: Message, state: FSMContext, bot:Bot):
                 high=1000
             )
         )
-        document = BufferedInputFile(sample, filename="sample.csv")
+        document = BufferedInputFile(sample, filename=f"{task}.csv")
         await bot.send_document(
             chat_id=message.from_user.id,
             document=document

@@ -6,8 +6,6 @@ import logging
 from dotenv import load_dotenv
 from pprint import pprint
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 load_dotenv()
 
 async def get_all_models(telegram_id, model_task=None, model_type = None):
@@ -29,10 +27,10 @@ async def get_all_models(telegram_id, model_task=None, model_type = None):
             "type":model_type,
             "task":model_task
         }
-        exact_url = f"{base_url}ml-algorithms/get_models" 
+        exact_url = f"{base_url}ml-algorithms/get_models/" 
         logging.debug(f"Sending to {exact_url}")
 
-        async with session.get(
+        async with session.post(
             exact_url, 
             headers=headers,
             data=data

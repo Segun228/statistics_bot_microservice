@@ -31,7 +31,6 @@ class BaseMLModel(ABC):
             X = df_processed[self.processed_feature_names]
             y = df_processed[self.target_column]
             response, img_zip = self._train(X, y)
-            
             self.is_fitted = True
             logging.info(f"Модель успешно обучена на {len(self.processed_feature_names)} признаках")
             return self, response, img_zip

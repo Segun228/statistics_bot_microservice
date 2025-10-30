@@ -15,7 +15,7 @@ services:
       - zookeeper_stats
     ports:
       - "9092:9092"
-      - "29092:29092"
+      - "29092:29092" 
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper_stats:2181
