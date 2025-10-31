@@ -1,5 +1,6 @@
 from aiokafka import AIOKafkaProducer
 from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+from aiokafka.errors import KafkaConnectionError
 import json
 import logging
 import uuid
@@ -7,6 +8,7 @@ import os
 import asyncio
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from typing import Any
 
 load_dotenv()
 
@@ -21,61 +23,94 @@ if not KAFKA_BROKER_DOCKER:
 
 _producer = None
 
-async def ensure_topic_exists():
+async def ensure_topic_exists(max_retries=5, retry_delay=5):
     if not LOGS:
         logging.warning("The logging mode is turned off")
         return
     
-    try:
-        if not KAFKA_BROKER_DOCKER:
-            raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
-        admin_client = AIOKafkaAdminClient(
-            bootstrap_servers=KAFKA_BROKER_DOCKER,
-            client_id="admin_client"
-        )
-        
-        await admin_client.start()
-        
-        topic_list = [NewTopic(
-            name=KAFKA_TOPIC,
-            num_partitions=1,
-            replication_factor=1
-        )]
-
+    admin_client = None
+    for attempt in range(max_retries):
         try:
-            await admin_client.create_topics(new_topics=topic_list)
-            print(f"Topic '{KAFKA_TOPIC}' created")
-        except Exception as e:
-            if "TopicAlreadyExistsError" in str(e) or "already exists" in str(e):
-                print(f"Topic '{KAFKA_TOPIC}' already exists")
-            else:
-                raise e
-                
-    except Exception as e:
-        logging.error(f"Failed to create topic: {e}")
-    finally:
-        await admin_client.close()
+            if not KAFKA_BROKER_DOCKER:
+                raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
+            
+            admin_client = AIOKafkaAdminClient(
+                bootstrap_servers=KAFKA_BROKER_DOCKER,
+                client_id="admin_client",
+                request_timeout_ms=10000
+            )
+            
+            await admin_client.start()
+            
+            topic_list = [NewTopic(
+                name=KAFKA_TOPIC,
+                num_partitions=1,
+                replication_factor=1
+            )]
 
-async def get_producer():
+            try:
+                await admin_client.create_topics(new_topics=topic_list)
+                logging.info(f"Topic '{KAFKA_TOPIC}' created")
+                break
+            except Exception as e:
+                if "TopicAlreadyExistsError" in str(e) or "already exists" in str(e):
+                    logging.info(f"Topic '{KAFKA_TOPIC}' already exists")
+                    break
+                else:
+                    raise e
+                    
+        except (KafkaConnectionError, ConnectionError) as e:
+            logging.warning(f"Kafka connection failed (attempt {attempt + 1}/{max_retries}): {e}")
+            if admin_client:
+                await admin_client.close()
+            if attempt < max_retries - 1:
+                logging.info(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+            else:
+                logging.error(f"Failed to connect to Kafka after {max_retries} attempts")
+                raise
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            if admin_client:
+                await admin_client.close()
+            raise
+        finally:
+            if admin_client:
+                await admin_client.close()
+
+
+
+async def get_producer(max_retries=3, retry_delay=2):
     global _producer
     if not LOGS:
         return None
     if not KAFKA_BROKER_DOCKER:
         raise RuntimeError("KAFKA_BROKER_DOCKER not set in environment")
     if _producer is None:
-        try:
-            _producer = AIOKafkaProducer(
-                bootstrap_servers=KAFKA_BROKER_DOCKER,
-                client_id=PRODUCER_CLIENT_ID,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
-            await _producer.start()
-        except Exception as e:
-            logging.error(f"Kafka producer not available: {e}")
-            _producer = None
+        for attempt in range(max_retries):
+            try:
+                _producer = AIOKafkaProducer(
+                    bootstrap_servers=KAFKA_BROKER_DOCKER,
+                    client_id=PRODUCER_CLIENT_ID,
+                    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                    request_timeout_ms=10000
+                )
+                await _producer.start()
+                logging.info("Kafka producer connected successfully")
+                break
+            except (KafkaConnectionError, ConnectionError) as e:
+                logging.warning(f"Kafka producer connection failed (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logging.error("Kafka producer unavailable after retries")
+                    _producer = None
+            except Exception as e:
+                logging.error(f"Unexpected producer error: {e}")
+                _producer = None
+                break
     return _producer
 
-from typing import Any
 
 async def build_log_message(
     telegram_id:str|None|int,
@@ -177,10 +212,15 @@ def build_log_message_sync(
 
 
 async def init_kafka():
-    if LOGS:
-        await ensure_topic_exists()
-        await get_producer()
+    if not LOGS:
+        return
+    asyncio.create_task(_background_kafka_init())
 
-
-async def async_init():
-    await init_kafka()
+async def _background_kafka_init():
+    """Фоновая инициализация Kafka без блокировки бота"""
+    try:
+        await ensure_topic_exists(max_retries=3, retry_delay=2)
+        await get_producer(max_retries=2, retry_delay=1)
+        logging.info("✅ Kafka инициализирована в фоне")
+    except Exception as e:
+        logging.warning(f"⚠️ Kafka не инициализирована: {e}. Бот работает без логирования в Kafka")

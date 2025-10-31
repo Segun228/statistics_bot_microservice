@@ -68,7 +68,6 @@ async def insert_log_async(log: dict):
         import asyncio
         loop = asyncio.get_event_loop()
 
-        # создаём отдельный клиент для этой вставки
         await loop.run_in_executor(None, lambda: clickhouse_connect.get_client(
             host=CLICKHOUSE_HOST,
             port=CLICKHOUSE_PORT,

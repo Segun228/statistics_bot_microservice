@@ -119,6 +119,20 @@ services:
       - clickhouse
       - postgres
 
+
+  logs:
+    image: stats_logs:latest
+    build: ./logs
+    container_name: stats_logs
+    env_file:
+      - .env
+    depends_on:
+      - kafka_stats
+      - backend
+      - bot
+      - clickhouse
+      - postgres
+
   redis:
     image: redis:7
     container_name: redis_stats
