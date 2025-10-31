@@ -12,7 +12,7 @@ load_dotenv()
 
 KAFKA_BROKER_DOCKER = os.getenv("KAFKA_BROKER_DOCKER")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL")
-KAFKA_TOPIC = os.getenv("KAFKA_TOPIC")
+KAFKA_TOPIC = os.getenv("BOT_KAFKA_TOPIC")
 PRODUCER_CLIENT_ID = os.getenv("PRODUCER_CLIENT_ID")
 LOGS = os.getenv("LOGS", "false").lower() == "true"
 
@@ -110,7 +110,6 @@ async def build_log_message(
         "env": env,
         "message": f"User {telegram_id} performed {action}",
     }
-    
     return await send_to_kafka(message)
 
 async def send_to_kafka(data):

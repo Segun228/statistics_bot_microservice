@@ -3,7 +3,7 @@ import asyncio
 import os
 import logging
 from dotenv import load_dotenv
-
+from app.kafka.utils import build_log_message
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -31,9 +31,27 @@ async def delete_account(telegram_id):
         ) as response:
             if response.status == 204:
                 logging.info(f"Пользователь с ID {telegram_id} успешно удален!")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(exact_url)
+                )
                 return True
             else:
                 error_text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(exact_url)
+                )
                 logging.error(f"Ошибка: {response.status}, Ответ: {error_text}")
                 return None
 
