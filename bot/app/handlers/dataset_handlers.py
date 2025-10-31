@@ -96,7 +96,15 @@ async def get_datasets_ab_test_menu(callback: CallbackQuery):
         logging.error("An error occured")
         logging.exception(e)
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("ml_algorithms"))
 async def get_datasets_ml_algo_menu(callback: CallbackQuery):
@@ -107,6 +115,15 @@ async def get_datasets_ml_algo_menu(callback: CallbackQuery):
         logging.error("An error occured")
         logging.exception(e)
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("get_criteria_"))
@@ -118,7 +135,15 @@ async def get_datasets_ab_criteria_menu(callback: CallbackQuery):
         logging.error("An error occured")
         logging.exception(e)
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("precision_menu_"))
 async def get_datasets_precision_criteria_menu(callback: CallbackQuery):
@@ -129,7 +154,15 @@ async def get_datasets_precision_criteria_menu(callback: CallbackQuery):
         logging.error("An error occured")
         logging.exception(e)
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -147,7 +180,15 @@ async def set_errors(callback: CallbackQuery, state:FSMContext):
         logging.error("An error occured")
         logging.exception(e)
         await callback.message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(Errors.handle_errors)
 async def alpha_errors(message:Message, state:FSMContext):
@@ -160,7 +201,15 @@ async def alpha_errors(message:Message, state:FSMContext):
         logging.error("An error occured")
         logging.exception(e)
         await message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(Errors.alpha)
 async def beta_errors(message:Message, state:FSMContext):
@@ -178,7 +227,15 @@ async def beta_errors(message:Message, state:FSMContext):
         logging.error("An error occured")
         logging.exception(e)
         await message.answer("Извините, возникла ошибка. Попробуйте позже(", reply_markup=inline_user_keyboards.catalogue)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # Установка теста и контроля
@@ -203,6 +260,15 @@ async def set_groups_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, не удалось установить группы, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.message(Groups.handle)
@@ -217,7 +283,15 @@ async def set_control_group(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, не удалось установить группы, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.message(Groups.controle)
@@ -270,7 +344,15 @@ async def set_end_group(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, не удалось установить группы, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #===========================================================================================================================
 # рассчет N
 #===========================================================================================================================
@@ -286,6 +368,15 @@ async def count_n_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 def format_mde_message(result):
     from math import ceil
@@ -339,7 +430,15 @@ async def count_n_end(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # рассчет MDE
@@ -371,7 +470,15 @@ async def count_mde_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #===========================================================================================================================
 # Z-test
 #===========================================================================================================================
@@ -450,7 +557,15 @@ async def ztest_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_ztest"))
 async def ztest_end(callback: CallbackQuery, state:FSMContext):
@@ -476,7 +591,15 @@ async def ztest_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -540,6 +663,7 @@ def format_test_message_ttest(response):
         raise
 
 
+
 @router.callback_query(F.data.startswith("ttest_"))
 async def ttest_start(callback: CallbackQuery, state:FSMContext):
     try:
@@ -558,6 +682,15 @@ async def ttest_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_ttest"))
@@ -585,6 +718,16 @@ async def ttest_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
 
 #===========================================================================================================================
 # chisquare-test
@@ -663,7 +806,15 @@ async def chi2test_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_chi2test"))
 async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
@@ -690,7 +841,15 @@ async def confirm_chi2_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -771,6 +930,15 @@ async def utest_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_utest"))
@@ -798,7 +966,15 @@ async def confirm_u_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #===========================================================================================================================
 # Welch`s test
 #===========================================================================================================================
@@ -877,6 +1053,15 @@ async def welchtest_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_welch"))
@@ -904,7 +1089,15 @@ async def confirm_welch_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -994,7 +1187,15 @@ async def andersondarlingtest_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_ad"))
 async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
@@ -1021,7 +1222,15 @@ async def confirm_ad_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # Cramer`s test
@@ -1102,6 +1311,15 @@ async def cramer_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_cramer"))
@@ -1129,7 +1347,15 @@ async def confirm_cramer_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #===========================================================================================================================
 # 2 sample Anderson-Darling`s test
 #===========================================================================================================================
@@ -1209,6 +1435,15 @@ async def ad2_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_ad2"))
@@ -1236,6 +1471,15 @@ async def confirm_ad2_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # 2 sample Kolmogorov-Smirnov`s test
@@ -1316,6 +1560,15 @@ async def ks_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_ks"))
@@ -1343,7 +1596,15 @@ async def confirm_ks_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -1433,6 +1694,15 @@ async def shapiro_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_sw"))
@@ -1460,7 +1730,15 @@ async def confirm_sw_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -1551,6 +1829,16 @@ async def lilleforce_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
 
 
 @router.callback_query(F.data.startswith("confirm_ll"))
@@ -1578,6 +1866,15 @@ async def confirm_ll_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # Bootstrap
@@ -1657,6 +1954,15 @@ async def bootstrap_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_bootstrap"))
@@ -1684,6 +1990,15 @@ async def bootstrap_short_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("enter_number_"))
@@ -1722,7 +2037,15 @@ async def long_bootstrap_finish(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # ANOVA
@@ -1802,6 +2125,15 @@ async def anova_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("confirm_anova"))
@@ -1817,9 +2149,7 @@ async def confirm_confirm_anova_end(callback: CallbackQuery, state:FSMContext):
         if not response:
             logging.error(response)
             raise ValueError("An error occurred during calculation")
-
         result = response if isinstance(response, dict) else json.loads(response.data)
-
         await callback.message.answer(
             format_test_message_anova(response = result),
             parse_mode="MarkdownV2",
@@ -1829,7 +2159,15 @@ async def confirm_confirm_anova_end(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -1854,6 +2192,17 @@ async def cuped_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
+
 
 @router.callback_query(F.data.startswith("confirm_cuped_"))
 async def ask_history_file(callback: CallbackQuery, state: FSMContext):
@@ -1866,6 +2215,15 @@ async def ask_history_file(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 
@@ -1893,6 +2251,16 @@ async def receive_history_file(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка при обработке файла. Попробуйте снова.")
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
 
 
 @router.message(Cuped.select_history_column)
@@ -1935,7 +2303,15 @@ async def finish_cuped(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Извините, произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -1962,6 +2338,17 @@ async def cupac_start(callback: CallbackQuery, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, произошла ошибка, попробуйте позже")
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
+
 
 
 @router.callback_query(F.data.startswith("confirm_cupac_"))
@@ -1977,6 +2364,17 @@ async def ask_history_file_cupac(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
+
+
 
 @router.message(Cupac.waiting_for_history_file, F.document)
 async def receive_history_file_cupac(message: Message, state: FSMContext):
@@ -2004,6 +2402,15 @@ async def receive_history_file_cupac(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка при обработке файла.")
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.message(Cupac.select_target_metric)
@@ -2027,7 +2434,15 @@ async def receive_target_metric(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка при выборе метрики.")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 
@@ -2101,3 +2516,12 @@ async def finish_cupac(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(f"Ошибка в finish_cupac: {e}")
         await message.answer("Произошла ошибка при выполнении CUPAC. попробуйте позже.", reply_markup=inline_user_keyboards.home)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )

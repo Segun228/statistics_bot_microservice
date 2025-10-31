@@ -48,6 +48,8 @@ from app.requests.put.put_distribution import put_distribution
 
 from app.requests.delete.delete_dataset import delete_dataset
 from app.requests.delete.deleteDistribution import delete_distribution
+
+
 #===========================================================================================================================
 # Конфигурация основных маршрутов
 #===========================================================================================================================
@@ -199,6 +201,15 @@ async def distribution_catalogue_callback_admin(callback: CallbackQuery):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, не удалось загрузить распределение", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 def escape_md(text: str) -> str:
@@ -262,6 +273,15 @@ async def dataset_catalogue_callback_admin(callback: CallbackQuery, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, не удалось загрузить датасет", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("datasetfile_"))
@@ -326,7 +346,15 @@ async def dataset_get_file(callback: CallbackQuery, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Извините, не удалось загрузить датасет", reply_markup=await inline_keyboards.get_datasets_catalogue(telegram_id=callback.from_user.id))
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 #===========================================================================================================================
@@ -707,7 +735,15 @@ async def get_dataset_file_message(message: Message, state: FSMContext, bot:Bot)
     except Exception as e:
         logging.exception(e)
         logging.error("Error while loading the dataset")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #===========================================================================================================================
 # Редактирование датасета
@@ -762,7 +798,15 @@ async def get_dataset_file_msg(message: Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         logging.error("Error while loading the dataset")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #===========================================================================================================================
 # Удаление датасета
 #===========================================================================================================================

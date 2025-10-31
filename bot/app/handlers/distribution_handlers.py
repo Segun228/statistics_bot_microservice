@@ -86,10 +86,19 @@ async def get_plot_start(callback: CallbackQuery, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="inline",
@@ -134,14 +143,22 @@ async def get_probability_end(message:Message, state: FSMContext, bot:Bot):
                     document = BufferedInputFile(file_buf.read(), filename=filename)
                     await bot.send_document(chat_id=message.from_user.id, document=document)
         await message.answer("Ваше распределение готово!", reply_markup= inline_keyboards.main)
-
     except Exception as e:
         logging.exception(e)
         await message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="callback",
         source="inline",
@@ -195,10 +212,19 @@ async def get_interval_end(message:Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="callback",
         source="inline",
@@ -249,10 +275,19 @@ async def get_quantile_end(message:Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="callback",
         source="inline",
@@ -303,10 +338,19 @@ async def get_percentile_end(message:Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="callback",
         source="inline",
@@ -352,10 +396,19 @@ async def get_sample_end(message:Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await message.answer("Возникла ошибка при анализе", reply_markup= inline_keyboards.main)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
         raise
     finally:
         await state.clear()
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="callback",
         source="inline",

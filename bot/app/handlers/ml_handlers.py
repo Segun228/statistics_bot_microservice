@@ -98,10 +98,27 @@ async def get_ml_task_menu(callback: CallbackQuery, state: FSMContext):
             "Вы в меню создания моделей машинного обучения\nКакую задачу вы хотите решать?",
             reply_markup=inline_keyboards.task_choice
         )
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="button",
+            payload="inline button",
+            platform="bot",
+            is_authenticated=True,
+            source="inline button",
+            level="INFO"
+        )
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.callback_query(F.data.startswith("task_"))
@@ -125,7 +142,15 @@ async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext)
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("MLmodel_"))
 async def retrieve_model_menu(callback: CallbackQuery, state: FSMContext):
@@ -152,7 +177,15 @@ async def retrieve_model_menu(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 def format_model_info(model_dict) -> str:
     """Форматирует информацию о модели в красивый текст"""
@@ -167,8 +200,7 @@ def format_model_info(model_dict) -> str:
         "dates": "📅",
         "urls": "🔗"
     }
-    
-    # Получаем значения из словаря
+
     name = model_dict.get('name') or 'Не указано'
     description = model_dict.get('description') or 'Не указано'
     task = model_dict.get('task_display') or model_dict.get('task') or 'Не указано'
@@ -250,7 +282,15 @@ async def create_model_menu(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 
@@ -266,7 +306,15 @@ async def select_model_name(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 
@@ -282,7 +330,14 @@ async def select_model_description(message:Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR"
+        )
 
 @router.message(CreateModel.description)
 async def select_drop_features(message:Message, state: FSMContext):
@@ -297,7 +352,14 @@ async def select_drop_features(message:Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR"
+        )
 
 
 @router.callback_query(CreateModel.features)
@@ -341,7 +403,14 @@ async def get_model_dataset_file_message(message: Message, state: FSMContext, bo
     except Exception as e:
         logging.exception(e)
         logging.error("Error while loading the dataset")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR"
+        )
 
 @router.callback_query(CreateModel.target)
 async def finish_creation(callback: CallbackQuery, state: FSMContext):
@@ -380,7 +449,15 @@ async def finish_creation(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("Произошла ошибка при обработке результатов, попробуйте позже.", 
                                         reply_markup=inline_user_keyboards.home)
         await state.clear()
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #==============================================================================================================
 # Предсказание модели
@@ -409,7 +486,15 @@ async def model_make_prediction(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(F.document, PredictModel.start_predict)
 async def finish_prediction(message: Message, state: FSMContext, bot: Bot):
@@ -524,7 +609,15 @@ async def finish_prediction(message: Message, state: FSMContext, bot: Bot):
     except Exception as e:
         logging.exception(f"Error in finish_prediction: {e}")
         await message.answer("❌ Произошла ошибка при обработке файла")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #==============================================================================================================
 # Генерация выборки
@@ -544,7 +637,15 @@ async def model_start_generating_sample(callback: CallbackQuery, state: FSMConte
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Ошибка во время генерации выборки")
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(GenerateSample.start)
 async def model_enter_features(message: Message, state: FSMContext):
@@ -562,7 +663,15 @@ async def model_enter_features(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка во время генерации выборки")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(GenerateSample.features)
 async def model_enter_meaning_features(message: Message, state: FSMContext):
@@ -580,7 +689,15 @@ async def model_enter_meaning_features(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка во время генерации выборки")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(GenerateSample.meaning)
 async def model_enter_number_samples(message: Message, state: FSMContext):
@@ -598,7 +715,15 @@ async def model_enter_number_samples(message: Message, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка во время генерации выборки")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(GenerateSample.noise)
 async def model_enter_noise(message: Message, state: FSMContext, bot:Bot):
@@ -634,7 +759,15 @@ async def model_enter_noise(message: Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         await message.answer("Ошибка во время генерации выборки")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 #==============================================================================================================
 # Дообучение модели
 #==============================================================================================================
@@ -660,7 +793,15 @@ async def model_make_fit(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(F.document, FitModel.start_fit)
 async def finish_fit(message: Message, state: FSMContext, bot:Bot):
@@ -746,7 +887,15 @@ async def finish_fit(message: Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         logging.error("Error while fitting the model")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #==============================================================================================================
 # Обучение модели с нуля
@@ -764,7 +913,15 @@ async def model_start_make_refit(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("decline_"), RefitModel.confirm)
 async def model_decline_refit(callback: CallbackQuery, state: FSMContext):
@@ -774,7 +931,15 @@ async def model_decline_refit(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_"), RefitModel.confirm)
 async def model_confirm_refit(callback: CallbackQuery, state: FSMContext):
@@ -797,6 +962,15 @@ async def model_confirm_refit(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 
 @router.message(F.document, RefitModel.start_refit)
@@ -835,7 +1009,15 @@ async def finish_refit(message: Message, state: FSMContext, bot:Bot):
     except Exception as e:
         logging.exception(e)
         logging.error("Error while fitting the model")
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #==============================================================================================================
 # Удаление модели
@@ -853,7 +1035,15 @@ async def model_start_delete(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("decline_"), DeleteModel.confirm)
 async def model_decline_deletion(callback: CallbackQuery, state: FSMContext):
@@ -863,7 +1053,15 @@ async def model_decline_deletion(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_"), DeleteModel.confirm)
 async def model_confirm_delete(callback: CallbackQuery, state: FSMContext):
@@ -882,7 +1080,15 @@ async def model_confirm_delete(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 #==============================================================================================================
 # Редактирование модели
@@ -900,7 +1106,15 @@ async def model_start_refit(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("decline_"), PutModel.confirm)
 async def model_decline_put(callback: CallbackQuery, state: FSMContext):
@@ -910,7 +1124,15 @@ async def model_decline_put(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.callback_query(F.data.startswith("confirm_"), PutModel.confirm)
 async def model_confirm_put(callback: CallbackQuery, state: FSMContext):
@@ -924,7 +1146,15 @@ async def model_confirm_put(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logging.exception(e)
         await callback.message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=callback.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(PutModel.name)
 async def model_set_name_put(message:Message, state:FSMContext):
@@ -938,7 +1168,15 @@ async def model_set_name_put(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
-
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )
 
 @router.message(PutModel.description)
 async def model_set_description_put(message:Message, state:FSMContext):
@@ -965,3 +1203,12 @@ async def model_set_description_put(message:Message, state:FSMContext):
     except Exception as e:
         logging.exception(e)
         await message.answer("Произошла ошибка, попробуйте позже.", reply_markup=inline_user_keyboards.home)
+        await build_log_message(
+            telegram_id=message.from_user.id,
+            action="error handled",
+            platform="bot",
+            is_authenticated=True,
+            source="error handler",
+            level="ERROR",
+            payload=str(e)
+        )

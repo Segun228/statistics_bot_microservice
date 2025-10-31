@@ -83,7 +83,12 @@ async def build_log_message(
     platform="bot",
     level="INFO",
     env="prod",
-    timestamp=None
+    timestamp=None,
+    request_method=None,
+    request_body=None,
+    response_code=None,
+    user_id=None,
+    is_authenticated=False
 ):
     if not LOGS:
         return {"status": "skipped", "reason": "logging_disabled"}
@@ -91,15 +96,19 @@ async def build_log_message(
     message = {
         "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
         "trace_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "is_authenticated": is_authenticated,
         "telegram_id": telegram_id,
         "platform": platform,
         "action": action,
+        "request_method": request_method,
+        "request_body": request_body,
+        "response_code": response_code,
         "level": level,
         "event_type": action,
         "source": source,
         "env": env,
         "message": f"User {telegram_id} performed {action}",
-        "payload": payload
     }
     
     return await send_to_kafka(message)
