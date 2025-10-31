@@ -37,7 +37,7 @@ async def get_all_models(telegram_id, model_task=None, model_type = None):
             data=data
         ) as response:
             if response.status in (200, 201, 202, 203):
-                logging.info("датасеты получены")
+                logging.info("модели получены")
                 return await response.json()
             else:
                 return None

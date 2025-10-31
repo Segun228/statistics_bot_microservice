@@ -512,7 +512,6 @@ class ML_model_fit_APIView(AuthenticatedAPIView, APIView):
 
 
 class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
-
     def get_queryset(self):
         return ML_Model.objects.filter(user=self.request.user)
 
@@ -522,11 +521,8 @@ class ML_models_ListAPIView(AuthenticatedAPIView, APIView):
         try:
             task = request.POST.get("task")
 
-            queryset = ML_Model.objects.filter(user=request.user)
-            logging.debug(f"🔍 TOTAL USER MODELS: {queryset.count()}")
-
             if task:
-                queryset = queryset.filter(task=task)
+                queryset = self.get_queryset().filter(task=task)
                 logging.debug(f"🔍 AFTER TASK FILTER: {queryset.count()}")
 
             for model in queryset:

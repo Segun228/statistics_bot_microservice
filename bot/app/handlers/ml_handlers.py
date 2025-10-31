@@ -108,12 +108,12 @@ async def get_ml_task_menu(callback: CallbackQuery, state: FSMContext):
 async def get_regression_models_menu(callback: CallbackQuery, state: FSMContext):
     try:
         task_type = callback.data.split("_")[1].strip()
-        logging.info("Retrieving models with task:", task_type)
+        logging.info(f"Retrieving models with task:{task_type}")
         models = await get_all_models(
             telegram_id=callback.from_user.id,
             model_task=task_type
         )
-        if not models or models is None:
+        if models is None:
             raise ValueError("Error while getting the models")
         await callback.message.answer(
             "Выберите существующую модель или создайте новую",

@@ -50,17 +50,44 @@ from abc import abstractmethod
 from sklearn.preprocessing import OneHotEncoder
 from typing import Tuple, Dict
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from sklearn.cluster import KMeans, DBSCAN, OPTICS
+
+
+def find_elbow_point_auto(wcss):
+    """Простая и надежная версия"""
+    if len(wcss) < 3:
+        return 2
+    improvements = [(wcss[i-1] - wcss[i]) / wcss[i-1] for i in range(1, len(wcss))]
+
+    for k in range(1, len(improvements)):
+        if improvements[k] < 0.10:
+            candidate1 = k + 1
+            break
+    else:
+        candidate1 = 2
+
+    if len(wcss) >= 4:
+        first_diff = np.diff(wcss)
+        second_diff = np.diff(first_diff)
+        candidate2 = np.argmin(second_diff) + 2 if len(second_diff) > 0 else 2
+        candidate2 = min(candidate2, 4)
+    else:
+        candidate2 = 2
+    candidate3 = max(2, len(wcss) // 2)
+    return min(candidate1, candidate2, candidate3)
+
 
 class BaseClusterModel(BaseMLModel):
     """Базовый класс для кластеризационных моделей."""
-    def __init__(self, feature_columns: list|None = None):
+    def __init__(self, feature_columns: list|None = None, *args, **kwargs):
         self.feature_columns = feature_columns
         self.model = None
         self.is_fitted = False
         self.processed_feature_names = []
         self.best_params = None
+        self.n_clusters = None
 
-    def fit(self, df: pd.DataFrame, drop_features = False) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
+    def fit(self, df: pd.DataFrame, drop_features = False, *args, **kwargs) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
         """Полный пайплайн обучения модели."""
         try:
             df_processed = self._prepare_data(df, drop_features=drop_features)
@@ -73,7 +100,7 @@ class BaseClusterModel(BaseMLModel):
             logging.error(f"Ошибка при обучении модели: {e}")
             raise
 
-    def refit(self, df: pd.DataFrame) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
+    def refit(self, df: pd.DataFrame, *args, **kwargs) -> Tuple['BaseMLModel', dict|None, io.BytesIO|None]:
         """Полный пайплайн  реобучения модели."""
         try:
             self.is_fitted = False
@@ -89,16 +116,16 @@ class BaseClusterModel(BaseMLModel):
             raise
 
     @abstractmethod
-    def _train(self, X: pd.DataFrame)->Tuple[dict|None, io.BytesIO|None]:
+    def _train(self, X: pd.DataFrame, *args, **kwargs)->Tuple[dict|None, io.BytesIO|None]:
         """Внутренний метод обучения - реализуется в подклассах."""
         raise NotImplementedError
 
     @abstractmethod
-    def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]:
+    def predict(self, X: pd.DataFrame, *args, **kwargs)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]:
         """Делает предсказания."""
         raise NotImplementedError
 
-    def _prepare_data(self, df: pd.DataFrame, drop_features = False) -> pd.DataFrame:
+    def _prepare_data(self, df: pd.DataFrame, drop_features = False, *args, **kwargs) -> pd.DataFrame:
         """Подготовка данных: отбор признаков, кодирование."""
         if self.target_column not in df.columns:
             raise ValueError(f"Целевая переменная '{self.target_column}' не найдена в данных")
@@ -121,7 +148,7 @@ class BaseClusterModel(BaseMLModel):
 
         return working_df
     
-    def _feature_analyzer(self, df: pd.DataFrame, var_coef_threshold=0.01, correlation_threshold=0.8) -> tuple[pd.DataFrame, list]:
+    def _feature_analyzer(self, df: pd.DataFrame, var_coef_threshold=0.01, correlation_threshold=0.8, *args, **kwargs) -> tuple[pd.DataFrame, list]:
         """Отбрасывает бесполезные фичи, отбирает по коэффициенту вариации и корреляции пирсона"""
         try:
             df = df.dropna()
@@ -185,7 +212,7 @@ class BaseClusterModel(BaseMLModel):
             logging.error(e)
             return df, list(df.columns)
 
-    def _feature_encoder(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _feature_encoder(self, df: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """Кодирует категориальные признаки как One-Hot-Encoder"""
         numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_columns = df.select_dtypes(include=['object', 'category']).columns.tolist()
@@ -205,7 +232,7 @@ class BaseClusterModel(BaseMLModel):
 
         return result_df
 
-    def save(self, path: str | None = None):
+    def save(self, path: str | None = None, *args, **kwargs):
         """Сохраняет модель в файл или возвращает байтовый буфер."""
         if self.model is None:
             raise ValueError("Невозможно сохранить: модель не обучена или не загружена.")
@@ -218,14 +245,14 @@ class BaseClusterModel(BaseMLModel):
         return buffer
 
     @classmethod
-    def load(cls, model_bytes):
+    def load(cls, model_bytes, *args, **kwargs):
         """Фабричный метод для загрузки полного объекта."""
         loaded_obj = joblib.load(model_bytes)
         instance = cls.__new__(cls)
         instance.__dict__.update(loaded_obj.__dict__)
         return instance
 
-    def get_features(self):
+    def get_features(self, *args, **kwargs):
         """Возвращает список используемых признаков."""
         return self.processed_feature_names if self.is_fitted else self.feature_columns
 
@@ -235,6 +262,7 @@ class BaseClusterModel(BaseMLModel):
         feature_columns: list,
         model,
         processed_feature_names: list,
+        *args, **kwargs
     ):
         """Создает новый инстанс класса с готовой моделью."""
         instance = cls.__new__(cls)
@@ -245,7 +273,7 @@ class BaseClusterModel(BaseMLModel):
         instance.best_params = instance.model.named_steps.get('model').get_params()
         return instance
 
-    def _calculate_metrics(self, X: pd.DataFrame, labels: np.ndarray) -> dict:
+    def _calculate_metrics(self, X: pd.DataFrame, labels: np.ndarray, *args, **kwargs) -> dict:
         """Вычисляет метрики качества кластеризации."""
         if len(np.unique(labels)) < 2:
             return {
@@ -270,7 +298,8 @@ def build_clusterization_plots(
     features,
     cluster_name: str = "Clusters",
     max_features_for_pairplot: int = 6,
-    max_scatter_plots: int = 20
+    max_scatter_plots: int = 20,
+    *args, **kwargs
 ) -> io.BytesIO | None:
     """Creates comprehensive visualization for clustering results."""
     try:
@@ -472,126 +501,64 @@ def build_clusterization_plots(
         return None
 
 
-class LogisticRegressionModel(BaseMLModel):
-    def _train(self, X: pd.DataFrame, y: pd.Series)->Tuple[dict|None, io.BytesIO|None]:
+class KMeansClusterModel(BaseMLModel):
+    def _train(self, X: pd.DataFrame, *args, **kwargs)->Tuple[dict|None, io.BytesIO|None]:
         try:
             """Внутренний метод обучения"""
-            uid = uuid1()
-            X[uid] = y
-            X = X.dropna()
-            y = X[uid].copy()
-            del X[uid]
             if not self.is_fitted or not self.model:
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y, test_size=0.2, random_state=42
-                )
-                pipeline = Pipeline([
-                    ('scaler', StandardScaler()),
-                    ('model', LogisticRegression())
-                ])
-                pipeline.fit(X_train, y_train)
-                param_grid = {
-                    'model__C': [0.001, 0.01, 0.1, 1, 10, 100],
-                    'model__penalty': ['l1', 'l2'],
-                    'model__solver': ['liblinear']
-                }
-                grid_search = GridSearchCV(
-                    pipeline, 
-                    param_grid, 
-                    cv=5, 
-                    scoring='neg_mean_squared_error',
-                    n_jobs=-1
-                )
-                grid_search.fit(X_train, y_train)
-                self.set_gridsearch_params(grid_search)
-                best_pipeline = grid_search.best_estimator_
-                self.model = best_pipeline
-                self.is_fitted = True
-                pred_vals = best_pipeline.predict(X_test)
+                X_train = X
+                self.feature_columns = X.columns
+                wcss = []
+                k_range = range(1, 12)
 
-                precision = precision_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
-                )
-                recall = recall_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
-                )
-                f1 = f1_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
-                )
-                roc_auc = roc_auc_score(
-                    y_true=y_test,
-                    y_score=pred_vals
-                )
-                gini = gini_score(
-                    y_true=y_test,
-                    y_score=pred_vals
-                )
+                for k in k_range:
+                    kmeans = KMeans(n_clusters=k, random_state=42)
+                    kmeans.fit(X)
+                    wcss.append(kmeans.inertia_)
+
+                k_clusters = find_elbow_point_auto(wcss)
+                self.n_clusters = k_clusters
+                best_pipeline = Pipeline([
+                    ('scaler', StandardScaler()),
+                    ('model', KMeans(n_clusters=k_clusters))
+                ])
+                best_pipeline.fit(X_train)
+                self.is_fitted = True
+                self.model = best_pipeline
                 return {
                     "Status":"ok",
-                    "Precision":precision,
-                    "Recall":recall,
-                    "F1":f1,
-                    "ROC_AUC":roc_auc,
-                    "Gini":gini
+                    "Number of clusters":self.n_clusters
                 }, None
             else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-                self.model.fit(X_train, y_train)
-                pred_vals = self.model.predict(X_test)
-                precision = precision_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
+                X_train, X_test = train_test_split(
+                    X,
+                    random_state=42
                 )
-                recall = recall_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
-                )
-                f1 = f1_score(
-                    y_true=y_test,
-                    y_pred=pred_vals
-                )
-                roc_auc = roc_auc_score(
-                    y_true=y_test,
-                    y_score=pred_vals
-                )
-                gini = gini_score(
-                    y_true=y_test,
-                    y_score=pred_vals
-                )
-
-                zip_buffer = build_classification_plots(
-                    result_column=pred_vals,
+                self.model = self.model.fit(X = X_train)
+                y_test = self.model.predict(X_test)
+                zip_buffer = build_clusterization_plots(
                     X = X_test,
-                    y = pred_vals,
+                    cluster_labels = y_test,
                     features = X.columns,
-                    target = self.target_column
                 )
-
                 return {
                     "Status":"ok",
-                    "Precision":precision,
-                    "Recall":recall,
-                    "F1":f1,
-                    "ROC_AUC":roc_auc,
-                    "Gini":gini
+                    "Number of clusters": self.n_clusters,
                 }, zip_buffer
         except Exception as e:
             logging.error("Error while training the model")
             logging.error(e)
             raise
 
-    def predict(self, X: pd.DataFrame)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
+    def predict(self, X: pd.DataFrame, *args, **kwargs)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
         """Делает предсказания"""
         try:
             X = X.dropna()
-            given_columns = X.columns
-            features = self.feature_columns
             target = self.target_column
-            if not features or not target:
-                raise ValueError("Could not find an essential column")
+            features = self.feature_columns
+            if not features:
+                raise ValueError("The model has no determined features or has not beet fit yet")
+            given_columns = X.columns
             if X.empty or X is None:
                 raise Exception("Improper dataframe given")
             for col in features:
@@ -603,22 +570,106 @@ class LogisticRegressionModel(BaseMLModel):
             return (
                 result_taret, 
                 X_extended, 
-                build_classification_plots(
-                    result_column=result_taret,
+                build_clusterization_plots(
                     X = X,
-                    y = result_taret,
+                    cluster_labels = result_taret,
                     features = X.columns,
-                    target = self.target_column
-                    )
-                )
+                ))
         except Exception as e:
             logging.error("Internal error while fitting the model")
             logging.error(e)
 
 
-class KMeansClusterModel(BaseMLModel):
-    pass
+
 
 
 class DensityClusterModel(BaseMLModel):
-    pass
+    def _train(self, X: pd.DataFrame, *args, **kwargs)->Tuple[dict|None, io.BytesIO|None]:
+        try:
+            """Внутренний метод обучения"""
+            if not self.is_fitted or not self.model:
+                X_train = X
+                self.feature_columns = X.columns
+                from sklearn.neighbors import NearestNeighbors
+                scaler = StandardScaler()
+                X_scaled = scaler.fit_transform(X_train)
+                nbrs = NearestNeighbors(n_neighbors=5)
+                nbrs.fit(X_scaled)
+                distances, indices = nbrs.kneighbors(X_scaled)
+                k_distances = np.sort(distances[:, -1])
+                eps = np.percentile(k_distances, 90)
+                min_samples = max(5, min(15, len(X_train) // 20))
+                best_pipeline = Pipeline([
+                    ('scaler', StandardScaler()),
+                    ('model', DBSCAN(eps=eps, min_samples=min_samples))
+                ])
+                best_pipeline.fit(X_train)
+                dbscan_model = best_pipeline.named_steps['model']
+                labels = dbscan_model.labels_
+                n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+                self.is_fitted = True
+                self.model = best_pipeline
+                self.n_clusters = n_clusters
+                
+                return {
+                    "Status":"ok",
+                    "Number of clusters": n_clusters,
+                    "eps": round(eps, 3),
+                    "min_samples": min_samples
+                }, None
+            else:
+                X_train, X_test = train_test_split(
+                    X,
+                    random_state=42
+                )
+                self.model = self.model.fit(X = X_train)
+                dbscan_model = self.model.named_steps['model']
+                y_test = dbscan_model.labels_
+                
+                zip_buffer = build_clusterization_plots(
+                    X = X_test,
+                    cluster_labels = y_test,
+                    features = X.columns,
+                )
+                return {
+                    "Status":"ok",
+                    "Number of clusters": self.n_clusters,
+                }, zip_buffer
+                
+        except Exception as e:
+            logging.error("Error while training the model")
+            logging.error(e)
+            raise
+
+    def predict(self, X: pd.DataFrame, *args, **kwargs)->tuple[np.ndarray, pd.DataFrame, io.BytesIO|None]|None:
+        """Делает предсказания"""
+        try:
+            X = X.dropna()
+            target = self.target_column
+            features = self.feature_columns
+            if not features:
+                raise ValueError("The model has no determined features or has not beet fit yet")
+            given_columns = X.columns
+            if X.empty or X is None:
+                raise Exception("Improper dataframe given")
+            for col in features:
+                if col not in given_columns:
+                    raise ValueError("Could not find an essential column")
+            X_subset = X[features]
+            self.model.fit(X_subset)
+            dbscan_model = self.model.named_steps['model']
+            result_target = dbscan_model.labels_
+            
+            X_extended = X.copy()
+            X_extended[target] = result_target
+            return (
+                result_target, 
+                X_extended, 
+                build_clusterization_plots(
+                    X = X,
+                    cluster_labels = result_target,
+                    features = X.columns,
+                ))
+        except Exception as e:
+            logging.error("Internal error while fitting the model")
+            logging.error(e)
