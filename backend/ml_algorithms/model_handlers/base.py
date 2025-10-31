@@ -254,4 +254,3 @@ class BaseMLModel(ABC):
             else:
                 serializable_params[key] = value
         return serializable_params
-    
