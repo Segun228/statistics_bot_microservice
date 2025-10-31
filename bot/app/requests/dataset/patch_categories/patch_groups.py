@@ -5,6 +5,7 @@ import logging
 from dotenv import load_dotenv
 from pprint import pprint
 from io import BytesIO
+from app.kafka.utils import build_log_message
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -42,8 +43,26 @@ async def set_groups(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет изменен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(data)
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None

@@ -4,6 +4,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from pprint import pprint
+from app.kafka.utils import build_log_message
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def delete_dataset(telegram_id, dataset_id):
@@ -29,9 +30,27 @@ async def delete_dataset(telegram_id, dataset_id):
         ) as response:
             if response.status in (200, 201, 202, 203, 204):
                 logging.info("датасет удален")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return True
             else:
                 error_text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = error_text
+                )
                 logging.error(f"Failed to delete dataset: {response.status} - {error_text}")
                 return None
 

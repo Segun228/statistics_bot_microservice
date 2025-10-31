@@ -4,6 +4,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from pprint import pprint
+from app.kafka.utils import build_log_message
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def delete_distribution(telegram_id, distribution_id):
@@ -29,9 +30,28 @@ async def delete_distribution(telegram_id, distribution_id):
         ) as response:
             if response.status in (200, 201, 202, 203, 204):
                 logging.info("распределение удалено")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(response.status)
+                )
                 return True
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = response.text
+                )
                 return None
+
 
 
 async def main():

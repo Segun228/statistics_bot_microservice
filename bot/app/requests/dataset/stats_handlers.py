@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 from pprint import pprint
 from io import BytesIO
-
+from app.kafka.utils import build_log_message
 
 async def count_n(
     telegram_id,
@@ -39,9 +39,27 @@ async def count_n(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(data)
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -73,9 +91,27 @@ async def count_mde(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -107,9 +143,27 @@ async def z_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -142,9 +196,27 @@ async def t_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -175,9 +247,27 @@ async def chi2_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -209,9 +299,27 @@ async def u_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -243,9 +351,27 @@ async def welch_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -277,9 +403,27 @@ async def ad_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -310,9 +454,27 @@ async def cramer_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -343,9 +505,27 @@ async def ks_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -379,9 +559,27 @@ async def sw_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -412,9 +610,27 @@ async def ll_test(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -451,9 +667,27 @@ async def bootstrap(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -488,9 +722,27 @@ async def anova(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -539,10 +791,28 @@ async def cuped(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
                 logging.error(f"Ошибка {response.status}: {text}")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 return None
 
 
@@ -594,8 +864,26 @@ async def cupac(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Результат получен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=exact_url
+                )
                 return await response.json()
             else:
                 text = await response.text()
                 logging.error(f"Ошибка {response.status}: {text}")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 return None

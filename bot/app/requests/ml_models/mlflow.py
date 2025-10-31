@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from sklearn.datasets import make_regression, make_classification, make_blobs
 from io import BytesIO
+from app.kafka.utils import build_log_message
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -57,9 +58,27 @@ async def fit_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(exact_url)
+                )
                 return await response.read()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(text)
 
 async def refit_model(
@@ -105,10 +124,28 @@ async def refit_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(exact_url)
+                )
                 return await response.json()
             else:
                 text = await response.text()
-                logging.error
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
+                logging.error(text)
 
 
 async def predict_model(    
@@ -155,9 +192,27 @@ async def predict_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(exact_url)
+                )
                 return await response.read()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(text)
 
 

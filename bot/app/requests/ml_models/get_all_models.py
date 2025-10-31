@@ -5,6 +5,8 @@ import json
 import logging
 from dotenv import load_dotenv
 from pprint import pprint
+from app.kafka.utils import build_log_message
+
 
 load_dotenv()
 
@@ -38,8 +40,26 @@ async def get_all_models(telegram_id, model_task=None, model_type = None):
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("модели получены")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(data)
+                )
                 return await response.json()
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 return None
 
 
@@ -67,8 +87,26 @@ async def retrieve_model(telegram_id, model_id=None):
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("датасеты получены")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(data)
+                )
                 return await response.json()
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 return None
 
 
@@ -126,9 +164,27 @@ async def post_model(
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("Датасет отправлен")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(response.text())
+                )
                 return await response.read()
             else:
                 text = await response.text()
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = text
+                )
                 logging.error(f"Ошибка {response.status}: {text}")
                 return None
 
@@ -156,6 +212,24 @@ async def delete_model(telegram_id, model_id):
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("датасеты получены")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(response.text())
+                )
                 return await response.json()
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = await response.json()
+                )
                 return None

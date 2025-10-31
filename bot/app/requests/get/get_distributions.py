@@ -4,6 +4,8 @@ import os
 import logging
 from dotenv import load_dotenv
 from pprint import pprint
+from app.kafka.utils import build_log_message
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def get_distributions(telegram_id):
@@ -30,8 +32,26 @@ async def get_distributions(telegram_id):
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("категории получены")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(response.json())
+                )
                 return await response.json()
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = response.json()
+                )
                 return None
 
 
@@ -59,8 +79,26 @@ async def retrieve_distribution(telegram_id, distribution_id):
         ) as response:
             if response.status in (200, 201, 202, 203):
                 logging.info("категория получена")
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp",
+                    level="INFO",
+                    payload=str(response.json())
+                )
                 return await response.json()
             else:
+                await build_log_message(
+                    telegram_id=telegram_id,
+                    action="request",
+                    platform="bot",
+                    is_authenticated=True,
+                    source="aiohttp error handler",
+                    level="ERROR",
+                    payload = response.json()
+                )
                 return None
 
 async def main():
