@@ -75,20 +75,22 @@ async def get_producer():
             _producer = None
     return _producer
 
+from typing import Any
+
 async def build_log_message(
-    telegram_id,
-    action,
-    source,
-    payload=None,
-    platform="bot",
-    level="INFO",
-    env="prod",
+    telegram_id:str|None|int,
+    action:str|None,
+    source:str|None,
+    payload:str|None|Any=None,
+    platform:str|None="bot",
+    level:str|None="INFO",
+    env:str|None="prod",
     timestamp=None,
-    request_method=None,
-    request_body=None,
-    response_code=None,
-    user_id=None,
-    is_authenticated=False
+    request_method:int|str|None=None,
+    request_body:str|None=None,
+    response_code:int|None=None,
+    user_id:int|str|None=None,
+    is_authenticated:bool|None=False
 ):
     if not LOGS:
         return {"status": "skipped", "reason": "logging_disabled"}

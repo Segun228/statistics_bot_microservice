@@ -142,6 +142,19 @@ class DistributionListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModel
             serializer.save(user=user)
         except Exception as e:
             logging.error(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
             raise
 
 
@@ -217,10 +230,33 @@ class DatasetListCreateAPIView(AuthenticatedAPIView, LoggingListCreateModelAPIVi
             dataset.length = records
             dataset.user=request.user
             dataset.save()
+            build_log_message(
+                user_id=self.request.user.id,
+                is_authenticated=(True if self.request.user.id else False),
+                telegram_id=request.headers.get("Authorization").split()[1],
+                action = "response",
+                response_code = 200,
+                request_method = self.request.method,
+                platform="backend",
+                level="INFO",
+            )
 
         except Exception as e:
             logging.error(e)
             dataset.delete()
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
             raise
 
 

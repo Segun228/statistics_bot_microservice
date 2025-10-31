@@ -86,13 +86,40 @@ class PlotView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_plot_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
-
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
 
 
 class ProbabilityView(AuthenticatedAPIView, APIView):
@@ -128,12 +155,40 @@ class ProbabilityView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_probability_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
 
 
 class IntervalView(AuthenticatedAPIView, APIView):
@@ -170,12 +225,40 @@ class IntervalView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_interval_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
 
 
 class QuantileView(AuthenticatedAPIView, APIView):
@@ -211,12 +294,41 @@ class QuantileView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_quantile_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
+
 
 
 class PercentileView(AuthenticatedAPIView, APIView):
@@ -252,12 +364,41 @@ class PercentileView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_quantile_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
+
 
 
 class SampleView(AuthenticatedAPIView, APIView):
@@ -293,9 +434,39 @@ class SampleView(AuthenticatedAPIView, APIView):
                     key=f"distribution_{distribution_id}_quantile_{request.user.id}",
                     value=result[1]
                 )
-            
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.error("An error occured while generating plot image")
             logging.exception(e)
+            try:
+                build_log_message(
+                    user_id=request.user.id,
+                    is_authenticated=(True if request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "error",
+                    response_code = 400,
+                    request_method = request.method,
+                    platform="backend",
+                    level="ERROR",
+                )
+            except Exception as e:
+                logging.error(e)
+            return Response(
+                {"error":str(e)}
+            )
+
+

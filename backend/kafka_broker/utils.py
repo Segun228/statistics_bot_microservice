@@ -12,11 +12,13 @@ load_dotenv()
 
 KAFKA_BROKER_DOCKER = os.getenv("KAFKA_BROKER_DOCKER")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL")
-KAFKA_TOPIC = os.getenv("KAFKA_TOPIC")
+KAFKA_TOPIC = os.getenv("KAFKA_BACKEND_TOPIC")
 PRODUCER_CLIENT_ID = os.getenv("PRODUCER_CLIENT_ID")
 LOGS = os.getenv("LOGS")
-if not LOGS or LOGS.lower() in ("0", "false", "no", "nan", ""):
+if not LOGS or LOGS.lower() in ("0", "false", "no", "nan", "", "n", "f"):
     LOGS = False
+else:
+    LOGS = True
 
 def ensure_topic_exists():
     for i in range(10):
@@ -78,17 +80,17 @@ def delivery_report(err, msg):
         logging.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
 
 def build_log_message(
-    user_id,
-    is_authenticated,
-    telegram_id,
-    action,
-    response_code=200,
-    request_method="GET",
-    request_body=None,
-    platform="backend",
-    level="INFO",
-    source="backend",
-    env="prod",
+    user_id:str|None|int=None,
+    is_authenticated:str|None|bool=None,
+    telegram_id:str|None|int=None,
+    action:str|None=None,
+    response_code:str|None|int=200,
+    request_method:str|None="GET",
+    request_body:str|None=None,
+    platform:str|None="backend",
+    level:str|None="INFO",
+    source:str|None="backend",
+    env:str|None="prod",
     timestamp=None
 ):
     message = {

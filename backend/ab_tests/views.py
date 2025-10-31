@@ -93,11 +93,11 @@ def download_dataset(dataset: Dataset)->BytesIO|None:
         return BytesIO(response.content)
     except Exception as e:
         logging.exception("Dataset download failed.")
-        local_exception_handler(e)
+        local_exception_handler(e, request=self.request)
 
 
 
-def local_exception_handler(e):
+def local_exception_handler(e, request):
     if isinstance(e, ValidationError):
         code = status.HTTP_400_BAD_REQUEST
     elif isinstance(e, (NotAuthenticated, AuthenticationFailed)):
@@ -123,6 +123,19 @@ def local_exception_handler(e):
     logging.exception(f"Unhandled exception: {str(e)}", exc_info=True)
     logging.exception(e)
     logging.error(e)
+    try:
+        build_log_message(
+            user_id=request.user.id,
+            is_authenticated=(True if request.user.id else False),
+            telegram_id=request.headers.get("Authorization").split()[1],
+            action = "error",
+            response_code = e.status_code,
+            request_method = request.method,
+            platform="backend",
+            level="ERROR",
+        )
+    except Exception as e:
+        logging.error(e)
     return Response({"error": str(e)}, status=code)
 
 
@@ -173,12 +186,25 @@ class CountMDEView(AuthenticatedAPIView, APIView):
                     f"count_mde_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class SampleSizeView(AuthenticatedAPIView, APIView):
@@ -231,12 +257,25 @@ class SampleSizeView(AuthenticatedAPIView, APIView):
                     f"count_n_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 
@@ -288,12 +327,25 @@ class Z_TestView(AuthenticatedAPIView, APIView):
                     f"ztest_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 
@@ -344,12 +396,25 @@ class T_TestView(AuthenticatedAPIView, APIView):
                     f"ttest_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 
@@ -400,12 +465,25 @@ class Chi_2Sample_TestView(AuthenticatedAPIView, APIView):
                     f"chi2_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Cramer_test_View(AuthenticatedAPIView, APIView):
@@ -455,12 +533,25 @@ class Cramer_test_View(AuthenticatedAPIView, APIView):
                     f"cramer_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class KS_2Sample_test_View(AuthenticatedAPIView, APIView):
@@ -510,12 +601,25 @@ class KS_2Sample_test_View(AuthenticatedAPIView, APIView):
                     f"ks_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class U_test_View(AuthenticatedAPIView, APIView):
@@ -565,12 +669,25 @@ class U_test_View(AuthenticatedAPIView, APIView):
                     f"utest_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Lilleforce_test_View(AuthenticatedAPIView, APIView):
@@ -619,12 +736,25 @@ class Lilleforce_test_View(AuthenticatedAPIView, APIView):
                     f"lil_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Shap_Wilke_test_View(AuthenticatedAPIView, APIView):
@@ -674,12 +804,25 @@ class Shap_Wilke_test_View(AuthenticatedAPIView, APIView):
                     f"shap_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Welch_test_View(AuthenticatedAPIView, APIView):
@@ -729,12 +872,25 @@ class Welch_test_View(AuthenticatedAPIView, APIView):
                     f"welch_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 
@@ -792,12 +948,25 @@ class Anderson_Darling_test_View(AuthenticatedAPIView, APIView):
                     f"anderson_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Anderson_Darling_2samle_test_View(AuthenticatedAPIView, APIView):
@@ -847,12 +1016,25 @@ class Anderson_Darling_2samle_test_View(AuthenticatedAPIView, APIView):
                     f"anderson_2sample_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 
@@ -905,12 +1087,25 @@ class Bootstrap_View(AuthenticatedAPIView, APIView):
                     f"bootstrap_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
 
 class Cuped_View(AuthenticatedAPIView, APIView):
@@ -977,10 +1172,23 @@ class Cuped_View(AuthenticatedAPIView, APIView):
             )
             
             response.raise_for_status()
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return Response({"status": 200, "success": True})
             
         except Exception as e:
-            local_exception_handler(e)
+            local_exception_handler(e, request=self.request)
             logging.error(e)
             return Response({"status": 500, "error": str(e)})
 
@@ -1050,9 +1258,22 @@ class Cupac_View(AuthenticatedAPIView, APIView):
                 }
             )
             response.raise_for_status()
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return Response({"status": 200, "success": True})
         except Exception as e:
-            local_exception_handler(e)
+            local_exception_handler(e, request=self.request)
             logging.error(e)
             return Response({"status": 500, "error": str(e)})
 
@@ -1104,10 +1325,23 @@ class ANOVA_View(AuthenticatedAPIView, APIView):
                     f"anova_user_{self.request.user.id}_dataset_{dataset_id}",
                     result[1]
                 )
+            try:
+                build_log_message(
+                    user_id=self.request.user.id,
+                    is_authenticated=(True if self.request.user.id else False),
+                    telegram_id=request.headers.get("Authorization").split()[1],
+                    action = "response",
+                    response_code = 200,
+                    request_method = self.request.method,
+                    platform="backend",
+                    level="INFO",
+                )
+            except Exception as e:
+                logging.error(e)
             return result[0]
 
         except Exception as e:
             logging.exception(e)
             logging.error(e)
-            return local_exception_handler(e)
+            return local_exception_handler(e, request=self.request)
 
