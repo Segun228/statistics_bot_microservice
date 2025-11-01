@@ -27,4 +27,5 @@ urlpatterns = [
     path("datasets/", include(datasets_urls), name="datasets-endpoint-group"),
     path("ab-tests/", include(ab_tests_urls), name="ab-tests-endpoint-group"),
     path("ml-algorithms/", include(ml_urls), name="ml-algorithms-endpoint-group"),
+    path('', include('django_prometheus.urls')),
 ]

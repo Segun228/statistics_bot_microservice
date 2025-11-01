@@ -54,7 +54,7 @@ async def cmd_start_admin(message: Message, state: FSMContext):
     await message.answer("Я предоставляю полный инструментарий для МатСтата и АБтестов")
     await message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
     await message.answer("Я много что умею 👇", reply_markup=inline_keyboards.main)
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -75,7 +75,7 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
     await callback.message.reply("Приветствую! 👋")
     await callback.message.answer("Я предоставляю полный инструментарий для МатСтата и АБтестов")
     await callback.message.answer("Сейчас ты можешь создавать, удалять и изменять распределения, а также добавлять свои датасеты в формате CSV")
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="inline",
         source="callback",
@@ -86,7 +86,7 @@ async def callback_start_admin(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Command("help"), IsAdmin())
 async def cmd_help(message: Message):
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -96,7 +96,7 @@ async def cmd_help(message: Message):
 
 @router.message(Command("contacts"), IsAdmin())
 async def cmd_contacts(message: Message):
-    build_log_message(
+    await build_log_message(
         telegram_id=message.from_user.id,
         action="command",
         source="command",
@@ -107,7 +107,7 @@ async def cmd_contacts(message: Message):
 
 @router.callback_query(F.data == "contacts", IsAdmin())
 async def contacts_callback(callback: CallbackQuery):
-    build_log_message(
+    await build_log_message(
         telegram_id=callback.from_user.id,
         action="callback",
         source="menu",

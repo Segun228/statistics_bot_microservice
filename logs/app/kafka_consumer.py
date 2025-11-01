@@ -4,10 +4,15 @@ from aiokafka import AIOKafkaConsumer
 from dotenv import load_dotenv
 import logging
 import asyncio
+from prometheus_client import Counter, Histogram
+
 
 load_dotenv()
 
 
+KAFKA_MESSAGES_PROCESSED = Counter('kafka_messages_processed_total', 'Total Kafka messages processed', ['topic', 'status'])
+KAFKA_PROCESSING_DURATION = Histogram('kafka_processing_duration_seconds', 'Kafka message processing duration')
+KAFKA_CONSUMER_ERRORS = Counter('kafka_consumer_errors_total', 'Kafka consumer errors', ['topic'])
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
 
 
@@ -33,7 +38,7 @@ class KafkaLogConsumer:
         try:
             while True:
                 msg = await self.consumer.getone()
-                await self.insert_log(msg.value)
+                await self.process_message(msg)
         except asyncio.CancelledError:
             logging.info(f"Kafka consumer task cancelled for topic: {self.topic}")
             raise 
@@ -44,3 +49,19 @@ class KafkaLogConsumer:
     async def stop(self):
         await self.consumer.stop()
         logging.info(f"Kafka consumer stopped for topic: {self.topic}")
+
+    async def process_message(self, message):
+        start_time = asyncio.get_event_loop().time()
+        try:
+            await self.insert_log(message.value)
+            KAFKA_MESSAGES_PROCESSED.labels(topic=self.topic, status='success').inc()
+            
+        except Exception as e:
+            KAFKA_MESSAGES_PROCESSED.labels(topic=self.topic, status='error').inc()
+            KAFKA_CONSUMER_ERRORS.labels(topic=self.topic).inc()
+            logging.error(f"Error processing Kafka message: {e}")
+            raise e
+            
+        finally:
+            duration = asyncio.get_event_loop().time() - start_time
+            KAFKA_PROCESSING_DURATION.observe(duration)

@@ -94,7 +94,7 @@ async def retrieve_model(telegram_id, model_id=None):
                     is_authenticated=True,
                     source="aiohttp",
                     level="INFO",
-                    payload=str(data)
+                    payload=str(response.json())
                 )
                 return await response.json()
             else:

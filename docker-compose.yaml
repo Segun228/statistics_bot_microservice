@@ -24,6 +24,15 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter_stats
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://admin:admin@postgres_stats:5432/stats_platform?sslmode=disable
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_stats
@@ -53,6 +62,13 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
 
   kafdrop_stats:
     image: obsidiandynamics/kafdrop
@@ -81,8 +97,11 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: clickhouse_stats
-    depends_on:
-      - kafka_stats
+    environment:
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -90,6 +109,7 @@ services:
       - clickhouse_data:/var/lib/clickhouse
     env_file:
       - .env
+    restart: unless-stopped
 
 
   bot:
@@ -110,6 +130,8 @@ services:
     image: stats_analytics:latest
     build: ./analytics
     container_name: stats_analytics
+    ports:
+      - 8001:8001
     env_file:
       - .env
     depends_on:
@@ -124,6 +146,8 @@ services:
     image: stats_logs:latest
     build: ./logs
     container_name: stats_logs
+    ports:
+      - 8002:8002
     env_file:
       - .env
     depends_on:
@@ -142,20 +166,19 @@ services:
       - redis_data:/data
 
 
-
-  tabix:
-    image: spoonest/clickhouse-tabix-web-client
-    platform: linux/amd64
-    container_name: tabix_stats
+  clickhouse_ui:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse_ui
     ports:
-      - "8124:80"
+      - "8125:8123"
     environment:
-      CLICKHOUSE_URL: http://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=default
+      - CLICKHOUSE_HTTP_PORT=8123
+      - CLICKHOUSE_LISTEN_HOST=0.0.0.0
     depends_on:
       - clickhouse
+
 
   prometheus:
     image: prom/prometheus:latest
@@ -292,4 +315,5 @@ volumes:
   prometheus_data:
   postgres_data:
   superset_data:
+  dbeaver_data:
 

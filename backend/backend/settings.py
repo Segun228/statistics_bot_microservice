@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "signals",
     "distributions",
     "ab_tests",
+    'django_prometheus',
     "ml_algorithms"
 ]
 
@@ -61,6 +62,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
