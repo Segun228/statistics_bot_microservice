@@ -1,367 +1,931 @@
+# Statistics Bot Platform 📊
 
-# 📊 StatBot AI - Платформа для статистического анализа и A/B тестирования
+Многофункциональная платформа для статистического анализа, A/B тестирования и машинного обучения с Telegram-ботом и веб-интерфейсом.
 
-## 🎯 **Основные возможности**
+## 🏆 Технологический стек
 
-### 📊 **Статистический анализ**
-![A/B Testing](https://img.shields.io/badge/A/B_Testing-15+_Methods-FF6B6B?style=for-the-badge&logo=databricks)
-![Statistical Tests](https://img.shields.io/badge/Statistical_Tests-Normality_Homogeneity-4ECDC4?style=for-the-badge&logo=science)
-![Confidence Intervals](https://img.shields.io/badge/Confidence_Intervals-Power_Analysis-45B7D1?style=for-the-badge&logo=chart-line)
-![Data Visualization](https://img.shields.io/badge/Data_Visualization-Matplotlib_Seaborn-F7B731?style=for-the-badge&logo=chart-bar)
+### 🔧 Основные технологии
+![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/-Django-092E20?style=flat-square&logo=django&logoColor=white)
+![Django REST](https://img.shields.io/badge/-Django_REST-FF1709?style=flat-square&logo=django&logoColor=white)
+![Aiogram](https://img.shields.io/badge/-Aiogram-0088CC?style=flat-square&logo=telegram&logoColor=white)
 
-### 🤖 **Машинное обучение**
-![Machine Learning](https://img.shields.io/badge/ML-Classification_Regression-8E44AD?style=for-the-badge&logo=ai)
-![Data Preprocessing](https://img.shields.io/badge/Data_Preprocessing-Scikit_learn-3498DB?style=for-the-badge&logo=python)
-![Cross Validation](https://img.shields.io/badge/Cross_Validation-Hyperparameter_Tuning-E74C3C?style=for-the-badge&logo=git-compare)
-![Model Metrics](https://img.shields.io/badge/Model_Metrics-Accuracy_Precision_Recall-27AE60?style=for-the-badge&logo=chart-line)
+### 🗄️ Базы данных
+![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white)
+![ClickHouse](https://img.shields.io/badge/-ClickHouse-FFCC02?style=flat-square&logo=clickhouse&logoColor=black)
+![Redis](https://img.shields.io/badge/-Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
 
-### 📈 **Визуализация и отчетность**
-![Real-time Dashboards](https://img.shields.io/badge/Real_time-Grafana_Dashboards-F46800?style=for-the-badge&logo=grafana)
-![Export Reports](https://img.shields.io/badge/Export-PDF_CSV_Excel-2ECC71?style=for-the-badge&logo=file-export)
-![Interactive Reports](https://img.shields.io/badge/Interactive-Reports-9B59B6?style=for-the-badge&logo=chart-pie)
+### 🚀 Брокеры сообщений
+![Apache Kafka](https://img.shields.io/badge/-Apache_Kafka-231F20?style=flat-square&logo=apachekafka&logoColor=white)
+![Zookeeper](https://img.shields.io/badge/-Zookeeper-FFFFFF?style=flat-square&logo=apachezookeeper&logoColor=black)
 
-### ⚡ **Производительность и масштабируемость**
-![Microservices](https://img.shields.io/badge/Microservices-Architecture-FF6B6B?style=for-the-badge&logo=server)
-![Async Processing](https://img.shields.io/badge/Async-Processing-4ECDC4?style=for-the-badge&logo=lightning)
-![Redis Cache](https://img.shields.io/badge/Redis-Caching-DC382D?style=for-the-badge&logo=redis)
-![Kafka Streams](https://img.shields.io/badge/Kafka-Stream_Processing-231F20?style=for-the-badge&logo=apachekafka)
+### 📊 Мониторинг и аналитика
+![Grafana](https://img.shields.io/badge/-Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)
+![Prometheus](https://img.shields.io/badge/-Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)
+![Apache Superset](https://img.shields.io/badge/-Apache_Superset-1E90FF?style=flat-square&logo=apache&logoColor=white)
 
-## 🏗️ **Архитектурные компоненты**
+### 🐳 Контейнеризация и оркестрация
+![Docker](https://img.shields.io/badge/-Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/-Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-### 🔄 **Data Pipeline**
-![Data Pipeline](https://img.shields.io/badge/Data_Pipeline-Telegram→Django→Kafka→ClickHouse-FF6B6B?style=for-the-badge&logo=apachekafka)
-![Real-time Analytics](https://img.shields.io/badge/Real_time-Analytics-4ECDC4?style=for-the-badge&logo=clock)
-![Event Streaming](https://img.shields.io/badge/Event_Streaming-Kafka_Connect-45B7D1?style=for-the-badge&logo=apachekafka)
+### 📈 Машинное обучение
+![Scikit-learn](https://img.shields.io/badge/-Scikit--Learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white)
+![XGBoost](https://img.shields.io/badge/-XGBoost-3776AB?style=flat-square&logo=xgboost&logoColor=white)
+![CatBoost](https://img.shields.io/badge/-CatBoost-00C4CC?style=flat-square)
+![LightGBM](https://img.shields.io/badge/-LightGBM-792EE5?style=flat-square)
 
-### 🗄️ **Базы данных и хранилища**
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Transactional_Data-336791?style=for-the-badge&logo=postgresql)
-![ClickHouse](https://img.shields.io/badge/ClickHouse-Analytical_OLAP-FF6B00?style=for-the-badge&logo=clickhouse)
-![Redis Cache](https://img.shields.io/badge/Redis-Sessions_Cache-DC382D?style=for-the-badge&logo=redis)
+### 📊 Статистика и анализ данных
+![Pandas](https://img.shields.io/badge/-Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
+![NumPy](https://img.shields.io/badge/-NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
+![SciPy](https://img.shields.io/badge/-SciPy-8CAAE6?style=flat-square&logo=scipy&logoColor=white)
+![StatsModels](https://img.shields.io/badge/-StatsModels-8CAAE6?style=flat-square)
 
-### 📊 **Мониторинг и визуализация**
-![Grafana](https://img.shields.io/badge/Grafana-Dashboards_F9A828?style=for-the-badge&logo=grafana)
-![Prometheus](https://img.shields.io/badge/Prometheus-Metrics_E45A5A?style=for-the-badge&logo=prometheus)
-![Metrics Collection](https://img.shields.io/badge/Metrics-Real_time_Collection-27AE60?style=for-the-badge&logo=chart-line)
+## 🎯 Ключевые возможности
 
-## 🔧 **Технические спецификации**
+### 📊 A/B Тестирование
+![T-test](https://img.shields.io/badge/-T_test-4ECDC4?style=flat-square)
+![Z-test](https://img.shields.io/badge/-Z_test-45B7D1?style=flat-square)
+![ANOVA](https://img.shields.io/badge/-ANOVA-FF6B6B?style=flat-square)
+![Chi-square](https://img.shields.io/badge/-Chi_square-FFA500?style=flat-square)
+![Bootstrap](https://img.shields.io/badge/-Bootstrap-7965D1?style=flat-square)
+![CUPED](https://img.shields.io/badge/-CUPED-67C7C7?style=flat-square)
 
-### 🐍 **Python экосистема**
-![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python)
-![Django 4.2](https://img.shields.io/badge/Django-4.2-092E20?style=for-the-badge&logo=django)
-![DRF 3.16](https://img.shields.io/badge/DRF-3.16-800000?style=for-the-badge&logo=django)
-![Pandas 2.3](https://img.shields.io/badge/Pandas-2.3-150458?style=for-the-badge&logo=pandas)
-![Scikit-learn](https://img.shields.io/badge/Scikit_learn-ML_Models-F7931E?style=for-the-badge&logo=scikitlearn)
+### 📈 Распределения вероятностей
+![Normal Distribution](https://img.shields.io/badge/-Normal-28a745?style=flat-square)
+![Binomial Distribution](https://img.shields.io/badge/-Binomial-007bff?style=flat-square)
+![Poisson Distribution](https://img.shields.io/badge/-Poisson-6f42c1?style=flat-square)
+![Exponential Distribution](https://img.shields.io/badge/-Exponential-e83e8c?style=flat-square)
 
-### 🔌 **Интеграции и API**
-![REST API](https://img.shields.io/badge/REST_API-OpenAPI_Spectacular-FF6C37?style=for-the-badge&logo=rest)
-![JWT Auth](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens)
-![Telegram Bot](https://img.shields.io/badge/Telegram_Bot-Aiogram_3.21-26A5E4?style=for-the-badge&logo=telegram)
+### 🤖 Машинное обучение
+![Regression](https://img.shields.io/badge/-Regression-20c997?style=flat-square)
+![Classification](https://img.shields.io/badge/-Classification-fd7e14?style=flat-square)
+![Clustering](https://img.shields.io/badge/-Clustering-e83e8c?style=flat-square)
+![Gradient Boosting](https://img.shields.io/badge/-Gradient_Boosting-6f42c1?style=flat-square)
 
-### 🐳 **Инфраструктура**
-![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?style=for-the-badge&logo=docker)
-![Docker Compose](https://img.shields.io/badge/Docker_Compose-Orchestration-2496ED?style=for-the-badge&logo=docker)
-![Gunicorn](https://img.shields.io/badge/Gunicorn-WSGI_Server-499848?style=for-the-badge&logo=gunicorn)
 
-## 📈 **Аналитические возможности**
+## 📋 Содержание
 
-### 🔬 **Статистические тесты**
-![T-Tests](https://img.shields.io/badge/T_Tests-Student_Welch-FF6B6B?style=for-the-badge&logo=calculator)
-![ANOVA](https://img.shields.io/badge/ANOVA-Variance_Analysis-4ECDC4?style=for-the-badge&logo=chart-bar)
-![Chi-square](https://img.shields.io/badge/Chi_square-Independence_Test-45B7D1?style=for-the-badge&logo=mathematics)
-![Non-parametric](https://img.shields.io/badge/Non_parametric-Mann_Whitney_Wilcoxon-F7B731?style=for-the-badge&logo=function)
+- [Обзор](#обзор)
+- [Архитектура](#архитектура)
+- [Функциональности](#функциональности)
+- [Установка и запуск](#установка-и-запуск)
+- [API Документация](#api-документация)
+- [Мониторинг](#мониторинг)
+- [Разработка](#разработка)
 
-### 📉 **Визуализация данных**
-![Distribution Plots](https://img.shields.io/badge/Distribution_Plots-Histogram_KDE-8E44AD?style=for-the-badge&logo=chart-area)
-![Correlation Analysis](https://img.shields.io/badge/Correlation-Heatmaps_Matrix-3498DB?style=for-the-badge&logo=chart-line)
-![Time Series](https://img.shields.io/badge/Time_Series-Trend_Analysis-E74C3C?style=for-the-badge&logo=clock)
+## 🎯 Обзор
 
-## 🚀 **Производительность**
+Statistics Bot Platform - это комплексное решение для статистического анализа данных, проведения A/B тестов и построения ML моделей. Платформа предоставляет:
 
-### ⚡ **Обработка данных**
-![Batch Processing](https://img.shields.io/badge/Batch_Processing-Pandas_Numpy-27AE60?style=for-the-badge&logo=server)
-![Stream Processing](https://img.shields.io/badge/Stream_Processing-Kafka_Consumer-F46800?style=for-the-badge&logo=apachekafka)
-![Parallel Computing](https://img.shields.io/badge/Parallel-Async_Await-9B59B6?style=for-the-badge&logo=lightning)
+- **Telegram бот** для интерактивной работы
+- **REST API** для програмmatic доступа
+- **Веб-интерфейсы** для визуализации и администрирования
+- **Распределенную архитектуру** с использованием микросервисов
+- **Мониторинг и аналитику** в реальном времени
 
-### 🔒 **Безопасность и надежность**
-![JWT Tokens](https://img.shields.io/badge/JWT-Secure_Auth-000000?style=for-the-badge&logo=jsonwebtokens)
-![API Rate Limiting](https://img.shields.io/badge/Rate_Limiting-Redis_Backed-DC382D?style=for-the-badge&logo=speedometer)
-![Data Validation](https://img.shields.io/badge/Data_Validation-Pydantic_2.11-00BFFF?style=for-the-badge&logo=check-circle)
+## 🏗 Архитектура
 
-## 🎨 **Интерфейсы**
+Платформа построена на микросервисной архитектуре с использованием следующих компонентов:
 
-### 🤖 **Telegram Bot**
-![Bot Commands](https://img.shields.io/badge/Bot_Commands-/start_/analyze_/report-26A5E4?style=for-the-badge&logo=telegram)
-![Inline Keyboards](https://img.shields.io/badge/Inline_Keyboards-Interactive_Menus-26A5E4?style=for-the-badge&logo=telegram)
-![FSM States](https://img.shields.io/badge/FSM_States-User_Workflow-26A5E4?style=for-the-badge&logo=finite-state-machine)
+### Основные сервисы
 
-### 🌐 **Web интерфейсы**
-![Admin Panel](https://img.shields.io/badge/Admin_Panel-Django_Admin-092E20?style=for-the-badge&logo=django)
-![REST API](https://img.shields.io/badge/API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger)
-![Grafana Dashboards](https://img.shields.io/badge/Dashboards-Grafana_F9A828?style=for-the-badge&logo=grafana)
+| Сервис | Назначение | Порт |
+|--------|------------|------|
+| `backend` | Django REST API | 8000 |
+| `bot` | Telegram бот | 8080 |
+| `analytics` | Аналитика и ClickHouse | 8001 |
+| `logs` | Централизованное логирование | 8002 |
 
----
+### Базы данных и брокеры
 
-## 🌟 Основные возможности
+| Сервис | Назначение | Порт |
+|--------|------------|------|
+| `postgres` | Основная БД | 5432 |
+| `clickhouse` | Аналитическая БД | 8123, 9000 |
+| `redis` | Кэширование | 6379 |
+| `kafka` | Брокер сообщений | 9092, 29092 |
 
-### 📈 **Статистический анализ**
-- A/B тестирование (15+ методов)
-- Проверка распределений (нормальность, однородность)
-- Доверительные интервалы и мощность тестов
-- Визуализация результатов
+### Мониторинг и визуализация
 
-### 🤖 **Машинное обучение**
-- Классификация и регрессия
-- Предобработка данных
-- Кросс-валидация и метрики качества
-- Автоматический подбор гиперпараметров
+| Сервис | Назначение | Порт |
+|--------|------------|------|
+| `grafana` | Дашборды | 3000 |
+| `prometheus` | Сбор метрик | 9090 |
+| `superset` | BI аналитика | 8088 |
+| `pgadmin` | Администрирование БД | 5050 |
 
-### 📊 **Визуализация и мониторинг**
-- Графики распределений
-- Real-time дашборды в Grafana
-- Экспорт результатов в PDF/CSV
-- Интерактивные отчеты
+## 🚀 Функциональности
 
-### ⚡ **Производительность**
-- Микросервисная архитектура
-- Асинхронная обработка
-- Кэширование в Redis
-- Потоковая обработка через Kafka
+### 📊 A/B Тестирование
+- **T-тест** - сравнение средних значений
+- **Z-тест** - для больших выборок
+- **U-тест (Манна-Уитни)** - непараметрический тест
+- **ANOVA** - дисперсионный анализ
+- **Хи-квадрат** - тест на независимость
+- **Тест Крамера** - анализ номинальных данных
+- **Bootstrap** - ресэмплинг
+- **Тест Колмогорова-Смирнова** - сравнение распределений
+- **Тест Шапиро-Уилка** - проверка нормальности
+- **Тест Лиллиефорса** - нормальность с оценкой параметров
+- **Тест Андерсона-Дарлинга** - проверка распределений
+- **CUPED** - повышение чувствительности тестов
+- **CUPAC** - ковариатная адаптация
+- **Расчет MDE** - минимального детектируемого эффекта
+- **Расчет размера выборки**
 
-## 🏗️ Архитектура системы
+### 📈 Распределения вероятностей
+- **Нормальное** - `normal`
+- **Биномиальное** - `binomial` 
+- **Пуассона** - `poisson`
+- **Равномерное** - `uniform`
+- **Экспоненциальное** - `exponential`
+- **Бета** - `beta`
+- **Гамма** - `gamma`
+- **Лог-нормальное** - `lognormal`
+- **Хи-квадрат** - `chi2`
+- **Стьюдента** - `t`
+- **Фишера** - `f`
+- **Геометрическое** - `geometric`
+- **Гипергеометрическое** - `hypergeom`
+- **Отрицательно биномиальное** - `negative_binomial`
 
-```
-Telegram Bot (Aiogram) → Django Backend → Kafka → Analytics Service → ClickHouse → Grafana
-        ↑                      ↑              ↑           ↑              ↑          ↑
-    Пользовательский     Основная бизнес-   Очередь    Аналитика в    Хранилище  Визуализация
-       интерфейс           логика API       сообщений  реальном времени данных    метрик
-```
+**Операции с распределениями:**
+- Расчет вероятностей
+- Квантили и процентили
+- Генерация выборок
+- Построение графиков
+- Доверительные интервалы
 
-## 📁 Структура проекта
+### 🤖 Машинное обучение
+**Задачи:**
+- Регрессия
+- Классификация  
+- Кластеризация
 
-```
-statbot-ai/
-├── 🤖 bot/                    # Telegram бот на Aiogram
-├── 🚀 backend/               # Django REST API
-├── 📊 analytics/             # Микросервис аналитики
-├── 📈 grafana_backup/        # Дашборды и конфиги Grafana
-└── 🐳 docker-compose.yaml    # Оркестрация контейнеров
-```
+**Алгоритмы:**
+- Линейная регрессия
+- Полиномиальная регрессия
+- KNN регрессия
+- Градиентный бустинг
+- Логистическая регрессия
+- SVM классификация
+- KNN классификация
+- Случайный лес
+- K-means кластеризация
+- DBSCAN кластеризация
 
-## 🛠️ Технологический стек
+**Функциональности ML:**
+- Создание и обучение моделей
+- Предсказания
+- Переобучение моделей
+- Управление фичами
 
-### **Backend & API**
-- **Python 3.12** - основной язык
-- **Django 4.2** - веб-фреймворк
-- **Django REST Framework** - REST API
-- **DRF Spectacular** - OpenAPI документация
+### 👥 Пользовательская система
+- Аутентификация через Telegram
+- Ролевая модель (админы/пользователи)
+- CRUD операции с логированием
+- Активные сессии пользователей
 
-### **Базы данных & Кэш**
-- **PostgreSQL** - основная БД
-- **Redis** - кэширование и сессии
-- **ClickHouse** - аналитическое хранилище
+## ⚙️ Установка и запуск
 
-### **Очереди & Аналитика**
-- **Kafka** - потоковая обработка
-- **Grafana** - визуализация метрик
-- **Prometheus** - сбор метрик
+### Предварительные требования
 
-### **Статистика & ML**
-- **Pandas, NumPy, SciPy** - анализ данных
-- **Scikit-learn** - машинное обучение
-- **Matplotlib, Seaborn** - визуализация
+- Docker & Docker Compose
+- Python 3.12 (для разработки)
+- Telegram бот токен
 
-### **Инфраструктура**
-- **Docker** - контейнеризация
-- **Aiogram** - Telegram бот
-- **Gunicorn** - WSGI сервер
+### Быстрый запуск
 
-## 🚀 Быстрый старт
-
-### 1. Клонирование репозитория
+1. **Клонирование репозитория**
 ```bash
-git clone https://github.com/your-username/statbot-ai.git
-cd statbot-ai
+git clone <repository-url>
+cd statistics_bot
 ```
 
-### 2. Настройка окружения
+2. **Настройка окружения**
 ```bash
 cp .env.example .env
-# Отредактируйте .env файл с вашими настройками
+# Отредактируйте .env файл, указав свои настройки
 ```
 
-### 3. Запуск через Docker
+3. **Запуск сервисов**
 ```bash
 docker-compose up -d
 ```
 
-### 4. Инициализация базы данных
+4. **Инициализация Superset** (опционально)
 ```bash
-docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py createsuperuser
+docker-compose --profile init up superset-init
 ```
 
-### 5. Доступ к сервисам
-- **Telegram Bot**: Найдите `@YourStatBot` в Telegram
-- **API Documentation**: http://localhost:8000/api/schema/
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Kafka UI**: http://localhost:8080
+### ❗️Конфигурация окружения 
 
-## 📡 API Endpoints
+Основные переменные в `.env`:
 
-### 🔐 **Аутентификация**
-| Метод | Эндпоинт | Описание |
-|-------|----------|----------|
-| `POST` | `/auth/user/` | Создание пользователя |
-| `GET` | `/auth/user/{telegram_id}/` | Получение данных пользователя |
-
-### 📊 **Датасеты**
-| Метод | Эндпоинт | Описание |
-|-------|----------|----------|
-| `GET` | `/api/datasets/` | Список датасетов |
-| `POST` | `/api/datasets/` | Загрузка датасета |
-| `GET` | `/api/datasets/{id}/` | Получение датасета |
-
-### 📊 **A/B Тестирование**
-| Метод | Эндпоинт | Тест | Описание |
-|-------|----------|------|----------|
-| `POST` | `/ab-tests/t-test/{dataset_id}/` | t-тест | Сравнение средних |
-| `POST` | `/ab-tests/z-test/{dataset_id}/` | Z-тест | Тест пропорций |
-| `POST` | `/ab-tests/bootstrap/{dataset_id}/` | Bootstrap | Непараметрический тест |
-| `POST` | `/ab-tests/anova/{dataset_id}/` | ANOVA | Дисперсионный анализ |
-| `POST` | `/ab-tests/chi-square-2sample/{dataset_id}/` | Chi-square | Тест независимости |
-| `POST` | `/ab-tests/cuped/{dataset_id}/` | CUPED | Уменьшение дисперсии |
-| `POST` | `/ab-tests/mde/{dataset_id}/` | MDE | Расчет минимального эффекта |
-
-### 📈 **Распределения**
-| Метод | Эндпоинт | Описание |
-|-------|----------|----------|
-| `POST` | `/distributions/plot/{id}/` | Построение графика |
-| `POST` | `/distributions/quantile/{id}/` | Расчет квантилей |
-| `POST` | `/distributions/probability/{id}/` | Вероятности |
-
-## 🤖 Работа с Telegram ботом
-
-### Основные команды:
-```bash
-/start - Начало работы
-/help - Помощь и инструкции
-/datasets - Управление датасетами
-/tests - A/B тестирование
-/analysis - Статистический анализ
-/models - Машинное обучение
-```
-
-### Пример workflow:
-1. **Загрузка данных**: Отправьте CSV файл боту
-2. **Предпросмотр**: Бот покажет структуру данных
-3. **Выбор анализа**: Выберите тип теста из меню
-4. **Результаты**: Получите детальный отчет с графиками
-
-## 📊 Примеры использования
-
-### A/B тестирование конверсии
-```python
-# Через API
-POST /ab-tests/z-test/123/
-{
-    "control_column": "conversion_A",
-    "test_column": "conversion_B",
-    "alpha": 0.05
-}
-
-# Ответ
-{
-    "p_value": 0.032,
-    "confidence_interval": [0.01, 0.05],
-    "effect_size": 0.03,
-    "is_significant": true
-}
-```
-
-### Анализ распределения
-```python
-POST /distributions/plot/123/
-{
-    "distribution_type": "normal",
-    "parameters": {"mean": 0, "std": 1}
-}
-```
-
-## ⚙️ Конфигурация
-
-### Основные настройки (.env)
 ```env
-# Database
-DATABASE_URL=postgresql://user:pass@db:5432/statbot
+# ========================
+# PROJECT CONFIG
+# ========================
+PROJECT_NAME=stats_platform
+ENVIRONMENT=development
+DEBUG=True
+SECRET_KEY=<django secret key>
+
+# ========================
+# NEON DATABASE
+# ========================
+DATABASE_URL=<neon database url>
+
+# ========================
+# CLICKHOUSE DATABASE
+# ========================
+CLICKHOUSE_HOST=clickhouse
+CLICKHOUSE_PORT=8123
+CLICKHOUSE_USER=default
+CLICKHOUSE_PASSWORD=default
+CLICKHOUSE_DB=default
+
+# ========================
+# POSTGRES DATABASE
+# ========================
+
+POSTGRES_DB=stats_platform
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_FIRSTNAME=admin
+POSTGRES_LASTNAME=admin
+
+# ========================
+# REDIS
+# ========================
+REDIS_HOST=redis
+REDIS_PORT=6379
 REDIS_URL=redis://redis:6379/0
 
-# Telegram
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_WEBHOOK_URL=https://yourdomain.com
+# ========================
+# KAFKA CONFIG
+# ========================
+KAFKA_BOOTSTRAP_SERVERS=kafka_stats:9092
+KAFKA_BROKER_URL=kafka_stats:9092
+KAFKA_BROKER_DOCKER=kafka_stats:9092
+BOOTSTRAP_SERVERS=kafka_stats:9092
 
-# Kafka
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-KAFKA_TOPIC_ANALYTICS=analytics_events
+# Kafka Topics
+KAFKA_BOT_TOPIC=bot_logs_topic
+KAFKA_BACKEND_TOPIC=backend_logs_topic
+KAFKA_TOPIC=backend_logs_topic
 
-# Monitoring
-GRAFANA_URL=http://grafana:3000
+# Kafka Producers
+PRODUCER_CLIENT_ID_DJANGO_BACKEND=django_backend_producer
+PRODUCER_CLIENT_ID_DJANGO_BOT=django_bot_producer
+
+# Kafka Consumer
+BATCH_SIZE=2
+KAFKA_GROUP_ID=stats_platform
+
+# ========================
+# TELEGRAM BOT
+# ========================
+# Production Bot
+BOT_TOKEN=<your bot token>
+
+
+# Bot Configuration
+BASE_URL=http://backend:8000/
+BASE_URL_DEV=http://127.0.0.1:8000/
+
+# ========================
+# CLOUD STORAGE (Supabase)
+# ========================
+CLOUD_URL=https://<supabase_project_hash>.supabase.co/storage/v1/object/public/statistics-bot-bucket/
+
+CLOUD_UPLOAD_URL=https://<supabase_project_hash>.supabase.co/storage/v1/object/statistics-bot-bucket/
+
+CLOUD_API_KEY=<your api key>
+
+# ========================
+# GRAFANA
+# ========================
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=admin
+
+# ========================
+# ADMINISTRATION
+# ========================
+ADMIN_1=<main admin id>
+ADMINS=<admin id separated by _>
+
+# ========================
+# FEATURE FLAGS
+# ========================
+LOGS=True
+CACHE=False
+MPLCONFIGDIR=/tmp/mplconfig
+
+
+# ========================
+# CLICKHOUSE EXPORTER
+# ========================
+CLICKHOUSE_USER=default
+CLICKHOUSE_PASSWORD=default
+CLICKHOUSE_URL=http://clickhouse:8123
+
+
+# ========================
+# REDDIS EXPORTER
+# ========================
+REDIS_ADDR=redis://redis:6379
+
+
+# ========================
+# SUPERSET CONFIG
+# ========================
+SUPERSET_SECRET_KEY=your-super-secret-key-change-this-in-production
+SUPERSET_USERNAME=admin
+SUPERSET_PASSWORD=admin
+SUPERSET_EMAIL=admin@stats.com
+SUPERSET_PORT=8088
+
+
+# Feature flags
+SUPERSET_FEATURE_EMBEDDED_SUPERSET=<True or False>
 ```
 
-## 📈 Мониторинг и метрики
 
-Система предоставляет метрики в реальном времени:
+# Statistics Bot Platform 📊 - API Documentation
 
-### **Бизнес-метрики**
-- Количество запущенных A/B тестов
-- Успешность тестов (p-value распределение)
-- Время выполнения анализов
+## 📋 Содержание API
 
-### **Технические метрики**
-- Загрузка CPU/Memory по сервисам
-- Latency API endpoints
-- Kafka lag и throughput
+- [A/B Testing](#ab-testing)
+- [Datasets Management](#datasets-management) 
+- [Distributions](#distributions)
+- [Machine Learning](#machine-learning)
+- [Users & Authentication](#users--authentication)
+- [System](#system)
 
-### **Дашборды Grafana**
-- **A/B Tests Overview**: Общая статистика тестов
-- **System Health**: Мониторинг инфраструктуры
-- **User Analytics**: Активность пользователей
+## 🔬 A/B Testing
 
-## 🔧 Разработка
+| Method | Endpoint | Parameters | Description | Response |
+|--------|----------|------------|-------------|----------|
+| **POST** | `/ab-tests/t-test/{dataset_id}/` | `dataset_id` (integer, path) | T-тест для сравнения средних значений | 200 - JSON Response |
+| **POST** | `/ab-tests/z-test/{dataset_id}/` | `dataset_id` (integer, path) | Z-тест для больших выборок | 200 - JSON Response |
+| **POST** | `/ab-tests/u-test/{dataset_id}/` | `dataset_id` (integer, path) | U-тест Манна-Уитни | 200 - JSON Response |
+| **POST** | `/ab-tests/welch-test/{dataset_id}/` | `dataset_id` (integer, path) | T-тест Уэлча для неравных дисперсий | 200 - JSON Response |
+| **POST** | `/ab-tests/anova/{dataset_id}/` | `dataset_id` (integer, path) | Дисперсионный анализ ANOVA | 200 - JSON Response |
+| **POST** | `/ab-tests/chi-square-2sample/{dataset_id}/` | `dataset_id` (integer, path) | Хи-квадрат тест для двух выборок | 200 - JSON Response |
+| **POST** | `/ab-tests/cramer-test/{dataset_id}/` | `dataset_id` (integer, path) | Тест Крамера для номинальных данных | 200 - JSON Response |
+| **POST** | `/ab-tests/ks-test-2sample/{dataset_id}/` | `dataset_id` (integer, path) | Тест Колмогорова-Смирнова | 200 - JSON Response |
+| **POST** | `/ab-tests/bootstrap/{dataset_id}/` | `dataset_id` (integer, path) | Bootstrap ресэмплинг | 200 - JSON Response |
+| **POST** | `/ab-tests/anderson-darling-test/{dataset_id}/` | `dataset_id` (integer, path) | Тест Андерсона-Дарлинга | 200 - JSON Response |
+| **POST** | `/ab-tests/anderson-darling-2sample-test/{dataset_id}/` | `dataset_id` (integer, path) | Тест Андерсона-Дарлинга для двух выборок | 200 - JSON Response |
+| **POST** | `/ab-tests/shapiro-wilk-test/{dataset_id}/` | `dataset_id` (integer, path) | Тест Шапиро-Уилка на нормальность | 200 - JSON Response |
+| **POST** | `/ab-tests/lilliefors-test/{dataset_id}/` | `dataset_id` (integer, path) | Тест Лиллиефорса на нормальность | 200 - JSON Response |
+| **POST** | `/ab-tests/cuped/{dataset_id}/` | `dataset_id` (integer, path) | CUPED для повышения чувствительности | 200 - JSON Response |
+| **POST** | `/ab-tests/cupac/{dataset_id}/` | `dataset_id` (integer, path) | CUPAC ковариатная адаптация | 200 - JSON Response |
+| **POST** | `/ab-tests/mde/{dataset_id}/` | `dataset_id` (integer, path) | Расчет минимального детектируемого эффекта | 200 - JSON Response |
+| **POST** | `/ab-tests/sample-size/{dataset_id}/` | `dataset_id` (integer, path) | Расчет размера выборки | 200 - JSON Response |
 
-### Установка для разработки
+## 📁 Datasets Management
+
+| Method | Endpoint | Parameters | Description | Request Body | Response |
+|--------|----------|------------|-------------|--------------|----------|
+| **GET** | `/api/datasets/` | - | Получить список датасетов | - | 200 - Array of `Dataset` |
+| **POST** | `/api/datasets/` | - | Создать новый датасет | `Dataset` (JSON/form-data) | 200 - `Dataset` |
+| **GET** | `/api/datasets/{dataset_id}/` | `dataset_id` (integer, path) | Получить датасет по ID | - | 200 - `Dataset` |
+| **PUT** | `/api/datasets/{dataset_id}/` | `dataset_id` (integer, path) | Полностью обновить датасет | `Dataset` (JSON/form-data) | 200 - `Dataset` |
+| **PATCH** | `/api/datasets/{dataset_id}/` | `dataset_id` (integer, path) | Частично обновить датасет | `PatchedDataset` (JSON/form-data) | 200 - `Dataset` |
+| **DELETE** | `/api/datasets/{dataset_id}/` | `dataset_id` (integer, path) | Удалить датасет | - | 204 - No content |
+
+### Dataset Schema
+```typescript
+{
+  id: integer (readonly),
+  columns: string[] (nullable),
+  url: string (uri, nullable, maxLength: 1000),
+  name: string (maxLength: 100),
+  alpha: number (double),
+  beta: number (double),
+  test: string (maxLength: 100),
+  control: string (maxLength: 100),
+  length: integer
+}
+```
+
+## 📊 Distributions
+
+### CRUD Operations
+
+| Method | Endpoint | Parameters | Description | Request Body | Response |
+|--------|----------|------------|-------------|--------------|----------|
+| **GET** | `/api/distributions/` | - | Получить список распределений | - | 200 - Array of `Distribution` |
+| **POST** | `/api/distributions/` | - | Создать новое распределение | `Distribution` (JSON/form-data) | 200 - `Distribution` |
+| **GET** | `/api/distributions/{distribution_id}/` | `distribution_id` (integer, path) | Получить распределение по ID | - | 200 - `Distribution` |
+| **PUT** | `/api/distributions/{distribution_id}/` | `distribution_id` (integer, path) | Полностью обновить распределение | `Distribution` (JSON/form-data) | 200 - `Distribution` |
+| **PATCH** | `/api/distributions/{distribution_id}/` | `distribution_id` (integer, path) | Частично обновить распределение | `PatchedDistribution` (JSON/form-data) | 200 - `Distribution` |
+| **DELETE** | `/api/distributions/{distribution_id}/` | `distribution_id` (integer, path) | Удалить распределение | - | 204 - No content |
+
+### Distribution Operations
+
+| Method | Endpoint | Parameters | Description | Response |
+|--------|----------|------------|-------------|----------|
+| **POST** | `/distributions/probability/{id}/` | `id` (integer, path) | Расчет вероятности для распределения | 200 - JSON Response |
+| **POST** | `/distributions/quantile/{id}/` | `id` (integer, path) | Расчет квантилей распределения | 200 - JSON Response |
+| **POST** | `/distributions/percentile/{id}/` | `id` (integer, path) | Расчет процентилей распределения | 200 - JSON Response |
+| **POST** | `/distributions/interval/{id}/` | `id` (integer, path) | Расчет доверительного интервала | 200 - JSON Response |
+| **POST** | `/distributions/sample/{id}/` | `id` (integer, path) | Генерация выборки из распределения | 200 - JSON Response |
+| **POST** | `/distributions/plot/{id}/` | `id` (integer, path) | Построение графика распределения | 200 - JSON Response |
+
+### Distribution Schema
+```typescript
+{
+  id: integer (readonly),
+  user: integer (readonly),
+  name: string (maxLength: 100),
+  description: string (nullable, maxLength: 1000),
+  distribution_type: DistributionTypeEnum,
+  distribution_parameters: object,
+  created_at: string (date-time, readonly),
+  updated_at: string (date-time, readonly)
+}
+```
+
+### Distribution Types
+```
+normal, binomial, poisson, uniform, exponential, beta, gamma, 
+lognormal, chi2, t, f, geometric, hypergeom, negative_binomial
+```
+
+## 🤖 Machine Learning
+
+### Model Management
+
+| Method | Endpoint | Parameters | Description | Request Body | Response |
+|--------|----------|------------|-------------|--------------|----------|
+| **GET** | `/ml-algorithms/model-create/` | - | Получить список ML моделей | - | 200 - Array of `ML_Model` |
+| **POST** | `/ml-algorithms/model-create/` | - | Создать новую ML модель | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **POST** | `/ml-algorithms/get_models/` | - | Получить доступные модели | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **GET** | `/ml-algorithms/model/` | - | Получить текущую модель | - | 200 - `ML_Model` |
+| **GET** | `/ml-algorithms/model/{model_id}/` | `model_id` (integer, path) | Получить модель по ID | - | 200 - `ML_Model` |
+| **PUT** | `/ml-algorithms/model/{model_id}/` | `model_id` (integer, path) | Полностью обновить модель | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **PATCH** | `/ml-algorithms/model/{model_id}/` | `model_id` (integer, path) | Частично обновить модель | `PatchedML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **DELETE** | `/ml-algorithms/model/{model_id}/` | `model_id` (integer, path) | Удалить модель | - | 204 - No content |
+
+### Model Operations
+
+| Method | Endpoint | Parameters | Description | Request Body | Response |
+|--------|----------|------------|-------------|--------------|----------|
+| **POST** | `/ml-algorithms/model-fit/{model_id}/` | `model_id` (integer, path) | Обучение ML модели | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **POST** | `/ml-algorithms/model-predict/{model_id}/` | `model_id` (integer, path) | Предсказание ML модели | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **GET** | `/ml-algorithms/model-refit/{model_id}/` | `model_id` (integer, path) | Переобучение модели | - | 200 - `ML_Model` |
+| **PUT** | `/ml-algorithms/model-refit/{model_id}/` | `model_id` (integer, path) | Обновление и переобучение | `ML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **PATCH** | `/ml-algorithms/model-refit/{model_id}/` | `model_id` (integer, path) | Частичное обновление и переобучение | `PatchedML_Model` (JSON/form-data) | 200 - `ML_Model` |
+| **DELETE** | `/ml-algorithms/model-refit/{model_id}/` | `model_id` (integer, path) | Удаление переобученной модели | - | 204 - No content |
+
+### ML Model Schema
+```typescript
+{
+  id: integer (readonly),
+  user: integer (readonly),
+  name: string (maxLength: 100),
+  description: string (maxLength: 100),
+  task: TaskEnum,
+  task_display: string (readonly),
+  type: TypeEnum,
+  type_display: string (readonly),
+  features: string[] (nullable),
+  target: string (maxLength: 200),
+  get_url: string (uri, nullable, maxLength: 1000),
+  post_url: string (uri, nullable, maxLength: 1000),
+  created_at: string (date-time, readonly),
+  updated_at: string (date-time, readonly)
+}
+```
+
+### Task Types
+```
+regression, classification, clusterization
+```
+
+### Algorithm Types
+```
+linear_regression, polinomial_regression, knn_regression, 
+gradient_boosting_regression, logistic_regression, 
+support_vector_machine_classification, knn_classification, 
+random_forest_classification, gradient_boosting_classification, 
+kmeans_clusterization, density_clusterization
+```
+
+## 👥 Users & Authentication
+
+| Method | Endpoint | Parameters | Description | Request Body | Response |
+|--------|----------|------------|-------------|--------------|----------|
+| **GET** | `/auth/user/` | - | Получить список пользователей | - | 200 - Array of `User` |
+| **POST** | `/auth/user/` | - | Создать нового пользователя | `User` (JSON/form-data) | 201 - `User` |
+| **GET** | `/auth/user/{telegram_id}/` | `telegram_id` (string, path) | Получить пользователя по Telegram ID | - | 200 - `User` |
+| **PUT** | `/auth/user/{telegram_id}/` | `telegram_id` (string, path) | Полностью обновить пользователя | `User` (JSON/form-data) | 200 - `User` |
+| **PATCH** | `/auth/user/{telegram_id}/` | `telegram_id` (string, path) | Частично обновить пользователя | `PatchedUser` (JSON/form-data) | 200 - `User` |
+| **DELETE** | `/auth/user/{telegram_id}/` | `telegram_id` (string, path) | Удалить пользователя | - | 204 - No content |
+| **GET** | `/auth/user/active/` | - | Получить активных пользователей | - | 200 - Array of `User` |
+
+### User Schema
+```typescript
+{
+  id: integer (readonly),
+  telegram_id: string (maxLength: 100),
+  created_at: string (date-time, readonly),
+  is_admin: boolean (readonly),
+  updated_at: string (date-time, readonly),
+  is_alive: boolean
+}
+```
+
+## 🖥️ System
+
+| Method | Endpoint | Parameters | Description | Response |
+|--------|----------|------------|-------------|----------|
+| **GET** | `/api/schema/` | `format`: json/yaml<br>`lang`: language code | Получить OpenAPI схему | 200 - OpenAPI specification |
+
+## 🎯 Примеры использования
+
+### Создание датасета
+```bash
+curl -X POST "http://localhost:8000/api/datasets/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my_dataset",
+    "columns": ["col1", "col2", "col3"],
+    "alpha": 0.05,
+    "beta": 0.2,
+    "test": "variant_a",
+    "control": "control",
+    "length": 1000
+  }'
+```
+
+### Запуск T-теста
+```bash
+curl -X POST "http://localhost:8000/ab-tests/t-test/1/"
+```
+
+### Создание распределения
+```bash
+curl -X POST "http://localhost:8000/api/distributions/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Normal Distribution",
+    "distribution_type": "normal",
+    "distribution_parameters": {"mean": 0, "std": 1}
+  }'
+```
+
+### Создание ML модели
+```bash
+curl -X POST "http://localhost:8000/ml-algorithms/model-create/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Regression Model",
+    "task": "regression",
+    "type": "linear_regression",
+    "target": "price",
+    "features": ["feature1", "feature2"]
+  }'
+```
+
+## 🔐 Аутентификация
+
+Большинство endpoints требуют аутентификации через Telegram. Используйте заголовок:
+```
+Authorization: Bearer <telegram_token>
+```
+
+## 📊 Статус коды
+
+- `200` - Успешный запрос
+- `201` - Успешное создание
+- `204` - Успешное удаление (нет содержимого)
+- `400` - Неверный запрос
+- `401` - Не авторизован
+- `403` - Запрещено
+- `404` - Не найдено
+- `500` - Внутренняя ошибка сервера
+
+
+## 📊 Мониторинг
+
+### Доступные интерфейсы
+
+После запуска доступны следующие веб-интерфейсы:
+
+- **Grafana Dashboards**: http://localhost:3000
+  - Логин: `admin`, Пароль: `admin`
+- **Prometheus**: http://localhost:9090
+- **Superset BI**: http://localhost:8088
+- **pgAdmin**: http://localhost:5050
+- **Kafdrop**: http://localhost:9001
+
+### Метрики и экспортеры
+
+- **Node Exporter**: Системные метрики - порт 9100
+- **cAdvisor**: Метрики контейнеров - порт 8081
+- **PostgreSQL Exporter**: Метрики БД - порт 9187
+- **Redis Exporter**: Метрики Redis - порт 9121
+- **Kafka Exporter**: Метрики Kafka - порт 9308
+- **ClickHouse Exporter**: Метрики ClickHouse - порт 9116
+
+# 🔧 Разработка
+
+## 🏗 Реальная архитектура проекта
+
+```
+statistics_bot/
+├── 📊 analytics/                    # Сервис аналитики (FastAPI + ClickHouse)
+│   ├── Dockerfile
+│   ├── app/
+│   │   ├── clickhouse_client.py     # Клиент ClickHouse
+│   │   ├── init_clickhouse.py       # Инициализация ClickHouse
+│   │   ├── kafka_consumer.py        # Консьюмер Kafka для аналитики
+│   │   └── main.py                  # Точка входа FastAPI
+│   └── requirements.txt
+│
+├── 🐍 backend/                      # Основной Django бекенд
+│   ├── Dockerfile
+│   ├── 📊 ab_tests/                 # Модуль A/B тестирования
+│   │   ├── handlers/                # Обработчики статистических тестов
+│   │   │   ├── handlers.py          # Основные обработчики тестов
+│   │   │   └── test.ipynb           # Jupyter ноутбук для тестирования
+│   │   ├── exception_handler.py     # Обработка исключений
+│   │   ├── models.py               # Модели A/B тестов
+│   │   ├── serializers.py          # Сериализаторы DRF
+│   │   ├── urls.py                 # Маршруты A/B тестов
+│   │   └── views.py                # Представления A/B тестов
+│   │
+│   ├── 📈 api/                     # Основное API приложение
+│   │   ├── migrations/             # Миграции базы данных
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_alter_dataset_columns.py
+│   │   │   ├── 0003_dataset_alfa_dataset_beta.py
+│   │   │   ├── 0004_rename_alfa_dataset_alpha.py
+│   │   │   ├── 0005_dataset_control_dataset_test.py
+│   │   │   └── 0006_dataset_length.py
+│   │   ├── models.py              # Модели Dataset
+│   │   ├── permissions.py         # Права доступа
+│   │   ├── serializers.py         # Сериализаторы
+│   │   ├── urls.py               # Маршруты API
+│   │   └── views.py              # Представления API
+│   │
+│   ├── 📊 datasets/               # Приложение датасетов
+│   │   ├── models.py             # Модели датасетов
+│   │   ├── serializers.py        # Сериализаторы
+│   │   ├── urls.py              # Маршруты датасетов
+│   │   └── views.py             # Представления датасетов
+│   │
+│   ├── 📊 distributions/         # Модуль распределений вероятностей
+│   │   ├── handlers.py          # Обработчики распределений
+│   │   ├── models.py           # Модели распределений
+│   │   ├── serializers.py      # Сериализаторы
+│   │   ├── urls.py            # Маршруты распределений
+│   │   └── views.py           # Представления распределений
+│   │
+│   ├── 🔄 kafka_broker/         # Интеграция с Kafka
+│   │   ├── utils.py            # Утилиты Kafka
+│   │   ├── models.py          # Модели Kafka
+│   │   └── views.py          # Представления Kafka
+│   │
+│   ├── 🤖 ml_algorithms/       # Модуль машинного обучения
+│   │   ├── model_handlers/    # Обработчики ML моделей
+│   │   │   ├── base.py       # Базовый класс обработчика
+│   │   │   ├── regression.py # Регрессионные модели
+│   │   │   ├── classification.py # Классификация
+│   │   │   ├── clusterization.py # Кластеризация
+│   │   │   ├── factory.py    # Фабрика моделей
+│   │   │   ├── sklearn/      # Scikit-learn интеграция
+│   │   │   └── main.ipynb    # Jupyter ноутбук ML
+│   │   ├── migrations/       # Миграции ML моделей
+│   │   │   ├── 0001_initial.py
+│   │   │   └── 0002_alter_ml_model_features.py
+│   │   ├── models.py        # Модели ML
+│   │   ├── serializers.py   # Сериализаторы ML
+│   │   ├── urls.py         # Маршруты ML
+│   │   └── views.py        # Представления ML
+│   │
+│   ├── 🗄️ redis_cache/      # Кэширование Redis
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   │
+│   ├── 📨 signals/          # Django сигналы
+│   │   ├── signals.py       # Определения сигналов
+│   │   ├── models.py
+│   │   └── views.py
+│   │
+│   ├── 👥 users/           # Модуль пользователей
+│   │   ├── migrations/     # Миграции пользователей
+│   │   │   └── 0001_initial.py
+│   │   ├── models.py      # Модели User
+│   │   ├── serializers.py # Сериализаторы
+│   │   ├── urls.py       # Маршруты пользователей
+│   │   └── views.py      # Представления
+│   │
+│   ├── ⚙️ backend/        # Настройки Django проекта
+│   │   ├── settings.py   # Основные настройки
+│   │   ├── urls.py      # Корневые маршруты
+│   │   ├── asgi.py      # ASGI конфигурация
+│   │   ├── wsgi.py      # WSGI конфигурация
+│   │   └── authentication.py # Аутентификация
+│   │
+│   ├── manage.py         # Django management
+│   ├── gunicorn.conf.py # Gunicorn конфигурация
+│   └── requirements.txt  # Зависимости Python
+│
+├── 🤖 bot/              # Telegram бот (Aiogram)
+│   ├── Dockerfile
+│   ├── app/
+│   │   ├── 🎯 handlers/     # Обработчики сообщений
+│   │   │   ├── admin_handlers.py    # Админ команды
+│   │   │   ├── user_handlers.py     # Пользовательские команды
+│   │   │   ├── dataset_handlers.py  # Работа с датасетами
+│   │   │   ├── distribution_handlers.py # Распределения
+│   │   │   ├── ml_handlers.py       # Машинное обучение
+│   │   │   ├── catcher.py          # Перехватчик ошибок
+│   │   │   └── router.py           # Маршрутизатор
+│   │   │
+│   │   ├── ⌨️ keyboards/    # Клавиатуры бота
+│   │   │   ├── answer_admin.py     # Reply клавиатуры админа
+│   │   │   ├── answer_user.py      # Reply клавиатуры пользователя
+│   │   │   ├── inline_admin.py     # Inline кнопки админа
+│   │   │   ├── inline_dataset.py   # Inline кнопки датасетов
+│   │   │   ├── inline_ml.py        # Inline кнопки ML
+│   │   │   └── inline_user.py      # Inline кнопки пользователя
+│   │   │
+│   │   ├── 🏗 middlewares/  # Промежуточное ПО
+│   │   │   ├── antiflood.py       # Защита от флуда
+│   │   │   └── metrics.py         # Метрики производительности
+│   │   │
+│   │   ├── 📡 requests/     # HTTP запросы к API
+│   │   │   ├── dataset/     # Запросы датасетов
+│   │   │   ├── distribution/ # Запросы распределений
+│   │   │   ├── get/         # GET запросы
+│   │   │   ├── post/        # POST запросы
+│   │   │   ├── put/         # PUT запросы
+│   │   │   ├── delete/      # DELETE запросы
+│   │   │   ├── ml_models/   # Запросы ML моделей
+│   │   │   ├── user/        # Запросы пользователей
+│   │   │   └── helpers/     # Вспомогательные функции
+│   │   │
+│   │   ├── 🗂️ database/     # Работа с БД (если есть)
+│   │   ├── 🔔 states/       # Состояния FSM
+│   │   │   └── states.py    # Определения состояний
+│   │   │
+│   │   ├── 📊 kafka/        # Интеграция с Kafka
+│   │   │   └── utils.py     # Утилиты Kafka
+│   │   │
+│   │   └── 🛠️ filters/      # Фильтры бота
+│   │       └── IsAdmin.py   # Фильтр проверки админа
+│   │
+│   ├── main.py             # Основной файл бота (polling)
+│   ├── main_wh.py          # Webhook версия бота
+│   └── requirements.txt    # Зависимости бота
+│
+├── 📊 logs/               # Сервис логирования
+│   ├── Dockerfile
+│   ├── app/
+│   │   ├── init_postgres.py    # Инициализация PostgreSQL для логов
+│   │   ├── kafka_consumer.py   # Консьюмер Kafka для логов
+│   │   ├── postgres_client.py  # Клиент PostgreSQL
+│   │   └── main.py            # Точка входа
+│   └── requirements.txt
+│
+├── 📈 dashboards/         # Grafana дашборды
+│   ├── Docker Container-1761997579326.json
+│   ├── Kubernetes cluster-1761997608049.json
+│   ├── Node Exporter Full-1761997619412.json
+│   └── PostgreSQL Database-1761997627875.json
+│
+├── 🐳 docker-compose.yaml # Docker Compose конфигурация
+├── 📊 prometheus/         # Prometheus конфигурация
+│   └── prometheus.yml
+│
+├── 📊 superset/          # Apache Superset
+│   └── Dockerfile
+│
+└── 📝 Документация и настройки
+    ├── README.md
+    ├── requirements.txt    # Общие зависимости
+    └── .env               # Переменные окружения
+```
+
+## 🔄 Взаимодействие компонентов
+
+### Поток данных:
+1. **Пользователь** → **Telegram Bot** → **Django Backend API**
+2. **Backend** → **PostgreSQL** (основные данные)
+3. **Backend** → **Kafka** (события и логи)
+4. **Kafka** → **Analytics Service** → **ClickHouse** (аналитика)
+5. **Kafka** → **Logs Service** → **PostgreSQL** (логи)
+6. **Все сервисы** → **Prometheus** (метрики)
+7. **Prometheus** → **Grafana** (визуализация)
+
+### Основные технологии каждого компонента:
+
+| Компонент | Технологии | Назначение |
+|-----------|------------|------------|
+| **Backend** | Django + DRF + PostgreSQL | Основная бизнес-логика, API |
+| **Bot** | Aiogram + Requests | Telegram интерфейс, клиент API |
+| **Analytics** | FastAPI + ClickHouse | Аналитика, быстрые запросы |
+| **Logs** | FastAPI + PostgreSQL | Централизованное логирование |
+| **Monitoring** | Prometheus + Grafana | Мониторинг и метрики |
+| **BI** | Apache Superset | Бизнес-аналитика |
+| **Message Broker** | Kafka + Zookeeper | Асинхронная коммуникация |
+| **Cache** | Redis | Кэширование данных |
+
+### Локальная разработка
+
+1. **Установка зависимостей**
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-
+source venv/bin/activate
 pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
 ```
 
+2. **Запуск без Docker**
+```bash
+# Backend
+cd backend
+python manage.py runserver
 
-### Ограничения
-- Максимальный размер файла: 100MB
-- Максимальное количество строк: 1M
-- Поддерживаемые форматы: CSV, Excel, JSON
+# Bot
+cd ../bot
+python main.py
+```
 
-## 🤝 Contributing
+3. **Миграции базы данных**
+```bash
+cd backend
+python manage.py makemigrations
+python manage.py migrate
+```
 
-Мы приветствуем вклад в проект! 
+### Тестирование
+
+```bash
+# Запуск тестов
+python manage.py test
+
+# С код покрытием
+coverage run manage.py test
+coverage report
+```
+
+## 🐛 Поиск и устранение неисправностей
+
+### Распространенные проблемы
+
+1. **Kafka не запускается**
+   - Проверьте, что Zookeeper запущен первым
+   - Убедитесь в достаточности ресурсов памяти
+
+2. **Проблемы с подключением к БД**
+   - Проверьте переменные окружения в .env
+   - Убедитесь, что PostgreSQL контейнер здоров
+
+3. **Бот не отвечает**
+   - Проверьте BOT_TOKEN в .env
+   - Убедитесь, что backend сервис доступен
+
+### Логи
+
+Логи доступны через:
+```bash
+# Просмотр логов конкретного сервиса
+docker-compose logs -f backend
+docker-compose logs -f bot
+
+# Все логи
+docker-compose logs -f
+```
+
+## 📄 Лицензия
+
+[Указать лицензию]
+
+## 🤝 Вклад в проект
 
 1. Форкните репозиторий
-2. Создайте feature branch: `git checkout -b feature/amazing-feature`
-3. Закоммитьте изменения: `git commit -m 'Add amazing feature'`
-4. Запушьте ветку: `git push origin feature/amazing-feature`
+2. Создайте feature ветку (`git checkout -b feature/amazing-feature`)
+3. Закоммитьте изменения (`git commit -m 'Add amazing feature'`)
+4. Запушьте в ветку (`git push origin feature/amazing-feature`)
 5. Откройте Pull Request
 
+## 📞 Поддержка
 
-## 👥 Команда
-
-- **Segun228** - Lead Developer & Data Scientist
-- **Segun228** - Contributor
-
+Для вопросов и поддержки:
+- Создайте Issue в репозитории
+- Напишите в Telegram бот
+- Обратитесь к администраторам платформы
 
 ---
 
-**⭐ Если вам нравится проект, поставьте звезду на GitHub!**
+**Statistics Bot Platform** - мощный инструмент для статистического анализа и машинного обучения с удобным Telegram интерфейсом и расширенными возможностями мониторинга.
